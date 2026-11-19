@@ -32,3 +32,8 @@
 .brandmark{width:30px!important;height:30px!important;min-width:30px!important;background:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:0!important;overflow:visible!important}
 .brandmark img{width:100%!important;height:100%!important;object-fit:contain!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;filter:drop-shadow(0 0 5px #a65cff55)}
 @media(max-width:520px){.brandmark{width:30px!important;height:30px!important;min-width:30px!important}}
+
+/* Restore original COINOVA logo in its full square purple form */
+.brandmark{width:30px!important;height:30px!important;min-width:30px!important;background:transparent!important;box-shadow:none!important;border:0!important;border-radius:0!important;overflow:visible!important;padding:0!important}
+.brandmark img{width:100%!important;height:100%!important;object-fit:contain!important;display:block;border-radius:0!important;filter:none!important}
+@media(max-width:520px){.brandmark{width:30px!important;height:30px!important;min-width:30px!important}}
