@@ -20,3 +20,6 @@
 .profile-dot{border-radius:50%!important}
 .notification i{width:16px!important;height:16px!important;right:-3px!important;top:-4px!important;font-size:9px!important;line-height:16px!important}
 }
+
+@media(max-width:520px){.brandmark img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}}
+.brandmark img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
