@@ -1249,3 +1249,15 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
   .content-inner { animation: mobile-page-fade 140ms ease-out both !important; }
 }
 @keyframes mobile-page-fade { from { opacity: .85; } }
+
+.mining-device-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:10px;align-items:stretch}
+.mining-device-grid .mining-panel{min-width:0}
+.mining-device-grid .mining-buttons{flex-wrap:wrap}
+.mining-device-grid .mining-buttons button{min-width:0;max-width:100%;padding-inline:9px;white-space:normal}
+.mining-aux .shop-art{min-height:80px;color:#c5a4ff}
+@media(max-width:700px){
+ .mining-device-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .mining-device-grid .mining-panel{padding:9px}
+ .mining-device-grid .mining-buttons button{font-size:12px}
+ .mining-device-grid .mining-stats{gap:5px;flex-wrap:wrap}
+}
