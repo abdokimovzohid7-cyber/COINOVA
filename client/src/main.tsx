@@ -1,3 +1,4 @@
+import { IslandModel } from './IslandModel';
 import { WalletActions, payoutWords, type Payout } from './WalletActions';
 import React,{useEffect,useRef,useState} from 'react';import{createRoot}from'react-dom/client';
 import{Home,Pickaxe,ListChecks,Gift,Wallet,UserRound,ShoppingBag,Coins,Users,Trophy,Bell,ArrowRight,ArrowUpRight,ArrowDownLeft,Copy,Check,Play,HandCoins,CircleStop,Send,Bot,LogOut,Sparkles,Zap,Clock,ShieldCheck,Globe,Rocket,ChevronRight,Orbit,Star,Moon,Gem,Flame,Crown,Camera}from'lucide-react';
@@ -525,7 +526,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
         style={{left: 135 + column * 225 + [12,52,-12,32][row], top: 155 + row * 116 + [0,16,-10,9,24][column % 5]}}
         onClick={()=>setIslandSelection(id)}>
         <span className="mining-island-platform">
-         {purchased ? item ? <EquipmentArt item={item}/> : <img src="/cosmic-press.webp" alt=""/> : <ShieldCheck size={17} aria-hidden="true"/>}
+         {purchased ? <IslandModel kind={item?.kind ?? 'press'} art={item?.art ?? -1}/> : <ShieldCheck size={17} aria-hidden="true"/>}
         </span>
         <span className="mining-island-label">{label}</span>
        </button>;
