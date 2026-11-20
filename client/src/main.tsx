@@ -19,7 +19,7 @@ function EquipmentArt({item}: {item: Equipment}) {
   backgroundPosition: `${(item.art % 5) * 25}% ${Math.floor(item.art / 5) * 12.5}%`,
  }}/>;
 }
-type Transaction={id:string;currency:string;delta:string;reason:string;created_at:string};type State={user:User;equipment?:Equipment[];miningConfig?:Record<string,MiningConfig>;deviceMining?:Record<string,({last_claimed_at:string;earned_fc:number}&Partial<MiningConfig>)|null>;payoutEnabled?:boolean;payouts?:Payout[];miningLevel?:number;miningLevels?:{price:number;rate:number}[];transactions:Transaction[];mining:{id:string;started_at:string;last_claimed_at:string;earned_fc:string;rate?:number;capacity?:number}|null;claims:{task_id:string;claim_day:string|null}[];bonuses:{claim_day:string}[];purchases:{item_id:string}[];leaders:{first_name:string;level:number;xp:string;fc:string}[];miningHistory:{started_at:string;ended_at:string|null;earned_fc:string}[];serverTime:string;tasks:Mission[];isAdmin?:boolean;managedTasks?:Mission[];telegramLinked?:boolean;telegramBot?:string;shop:{id:string;price:number}[]};
+type Transaction={id:string;currency:string;delta:string;reason:string;created_at:string};type State={user:User;equipment?:Equipment[];miningConfig?:Record<string,MiningConfig>;deviceMining?:Record<string,({last_claimed_at:string;earned_fc:number}&Partial<MiningConfig>)|null>;payoutEnabled?:boolean;payouts?:Payout[];miningLevel?:number;miningLevels?:{price:number;rate:number}[];transactions:Transaction[];mining:{id:string;started_at:string;last_claimed_at:string;earned_fc:string;rate?:number;capacity?:number}|null;claims:{task_id:string;claim_day:string|null}[];bonuses:{claim_day:string}[];purchases:{item_id:string}[];leaders:{avatar?:string|null;first_name:string;level:number;xp:string;fc:string}[];miningHistory:{started_at:string;ended_at:string|null;earned_fc:string}[];serverTime:string;tasks:Mission[];isAdmin?:boolean;managedTasks?:Mission[];telegramLinked?:boolean;telegramBot?:string;shop:{id:string;price:number}[]};
 const isRender = window.location.hostname === 'coinova-web.onrender.com';
 const telegramWebApp = () => (window as Window & {Telegram?: {WebApp?: {initData?: string; ready?: () => void}}}).Telegram?.WebApp;
 function loadTelegramSdk() {
@@ -459,7 +459,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
       const leader = leaders[place - 1];
       const initial = leader?.first_name.normalize().match(/[\p{L}\p{N}]/u)?.[0]?.toUpperCase();
       return <li key={place} data-place={place} className="ranking-podium-slot" aria-label={'#' + place + ' · ' + (leader?.first_name ?? vacant)}>
-       <span className="podium-avatar" aria-hidden="true">{initial || <UserRound size={16}/>}</span>
+       <span className="podium-avatar" aria-hidden="true">{leader?.avatar ? <img className="profile-avatar-photo" src={leader.avatar} alt=""/> : initial || <UserRound size={16}/>}</span>
        <div className="podium-result">
         <strong title={leader?.first_name}>{leader?.first_name ?? vacant}</strong>
         {leader && <><b>{number(leader.xp)} XP</b><span>{t('level')} {leader.level}</span></>}
