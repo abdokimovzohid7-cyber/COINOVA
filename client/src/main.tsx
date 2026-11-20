@@ -236,8 +236,8 @@ function FloatingCoins() {
   </span>)}
  </div>;
 }
-const nav:[Exclude<Page,'exchange'|'withdraw'>,typeof Home][]=[['home',Home],['mining',Pickaxe],['tasks',ListChecks],['bonus',Gift],['wallet',Wallet],['profile',UserRound]];
-const extras:[Exclude<Page,'exchange'|'withdraw'>,typeof Home][]=[['coin',Coins],['shop',ShoppingBag],['referrals',Users],['leaderboard',Trophy]];
+const nav:[Exclude<Page,'exchange'|'withdraw'|'admin'>,typeof Home][]=[['home',Home],['mining',Pickaxe],['tasks',ListChecks],['bonus',Gift],['wallet',Wallet],['profile',UserRound]];
+const extras:[Exclude<Page,'exchange'|'withdraw'|'admin'>,typeof Home][]=[['coin',Coins],['shop',ShoppingBag],['referrals',Users],['leaderboard',Trophy]];
 const Card=({children,className=''}:{children:React.ReactNode;className?:string})=><div className={'glass '+className}>{children}</div>;
 const languages = [
  { code: 'uz', name: 'O‘zbekcha' },
