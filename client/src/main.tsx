@@ -19,7 +19,7 @@ function EquipmentArt({item}: {item: Equipment}) {
   backgroundPosition: `${(item.art % 5) * 25}% ${Math.floor(item.art / 5) * 12.5}%`,
  }}/>;
 }
-type Transaction={id:string;currency:string;delta:string;reason:string;created_at:string};type State={user:User;equipment?:Equipment[];miningConfig?:Record<string,MiningConfig>;deviceLevels?:Record<string,number>;deviceUpgradePrices?:number[];deviceMining?:Record<string,({last_claimed_at:string;earned_fc:number}&Partial<MiningConfig>)|null>;payoutEnabled?:boolean;payouts?:Payout[];miningLevel?:number;miningLevels?:{price:number;rate:number}[];transactions:Transaction[];mining:{id:string;started_at:string;last_claimed_at:string;earned_fc:string;rate?:number;capacity?:number}|null;claims:{task_id:string;claim_day:string|null}[];bonuses:{claim_day:string}[];purchases:{item_id:string}[];leaders:{avatar?:string|null;first_name:string;level:number;xp:string;fc:string}[];miningHistory:{started_at:string;ended_at:string|null;earned_fc:string}[];serverTime:string;tasks:Mission[];isAdmin?:boolean;managedTasks?:Mission[];telegramLinked?:boolean;telegramBot?:string;shop:{id:string;price:number}[];shopBundle?:{id:string;itemIds:string[];price:number;endsAt:number}|null};
+type Transaction={id:string;currency:string;delta:string;reason:string;created_at:string};type State={user:User;equipment?:Equipment[];miningConfig?:Record<string,MiningConfig>;deviceLevels?:Record<string,number>;deviceUpgradePrices?:number[];deviceMining?:Record<string,({last_claimed_at:string;earned_fc:number}&Partial<MiningConfig>)|null>;payoutEnabled?:boolean;payouts?:Payout[];miningLevel?:number;mainStorageLevel?:number;mainStorageLevels?:{capacity:number;price:number}[];miningLevels?:{price:number;rate:number}[];transactions:Transaction[];mining:{id:string;started_at:string;last_claimed_at:string;earned_fc:string;rate?:number;capacity?:number}|null;claims:{task_id:string;claim_day:string|null}[];bonuses:{claim_day:string}[];purchases:{item_id:string}[];leaders:{avatar?:string|null;first_name:string;level:number;xp:string;fc:string}[];miningHistory:{started_at:string;ended_at:string|null;earned_fc:string}[];serverTime:string;tasks:Mission[];isAdmin?:boolean;managedTasks?:Mission[];telegramLinked?:boolean;telegramBot?:string;shop:{id:string;price:number}[];shopBundle?:{id:string;itemIds:string[];price:number;endsAt:number}|null};
 const isRender = window.location.hostname === 'coinova-web.onrender.com';
 const telegramWebApp = () => (window as Window & {Telegram?: {WebApp?: {initData?: string; ready?: () => void}}}).Telegram?.WebApp;
 function loadTelegramSdk() {
@@ -449,7 +449,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   </Card>;
  }
  function SectionHeader({title,to}:{title:string;to?:Page}){return <div className="section-title"><h2>{title}</h2>{to&&<button className="text-link" onClick={()=>changePage(to)}>{t('viewAll')} </button>}</div>}
- function Transactions(){return <div className="transaction-list">{data!.transactions.length===0?<p className="empty">{t('noTransactions')}</p>:data!.transactions.map(tx=><div className="transaction" key={tx.id}><span className={'tx-icon '+(Number(tx.delta)>0?'positive':'negative')}>{Number(tx.delta)>0?<ArrowDownLeft size={19}/>:<ArrowUpRight size={19}/>}</span><div className="tx-main"><strong>{tx.reason==='shop'?t('shop_transaction'):((tx.reason in dictionary[lang])?t(tx.reason as TranslationKey):tx.reason)}</strong><small className="muted">{date(tx.created_at)}</small></div><span className={Number(tx.delta)>0?'plus':'minus'}>{Number(tx.delta)>0?'+':''}{number(tx.delta)} {tx.currency}</span></div>)}</div>}
+ function Transactions(){return <div className="transaction-list">{data!.transactions.length===0?<p className="empty">{t('noTransactions')}</p>:data!.transactions.map(tx=><div className="transaction" key={tx.id}><span className={'tx-icon '+(Number(tx.delta)>0?'positive':'negative')}>{Number(tx.delta)>0?<ArrowDownLeft size={19}/>:<ArrowUpRight size={19}/>}</span><div className="tx-main"><strong>{tx.reason==='mining_storage_upgrade'?{uz:'Sig‘im yangilandi',ru:'Увеличение вместимости',en:'Capacity upgrade'}[lang]:tx.reason==='shop'?t('shop_transaction'):((tx.reason in dictionary[lang])?t(tx.reason as TranslationKey):tx.reason)}</strong><small className="muted">{date(tx.created_at)}</small></div><span className={Number(tx.delta)>0?'plus':'minus'}>{Number(tx.delta)>0?'+':''}{number(tx.delta)} {tx.currency}</span></div>)}</div>}
  function Leaderboard(){
   const leaders = data!.leaders;
   const title = lang === 'uz' ? 'Kosmik reyting' : lang === 'ru' ? 'Космический рейтинг' : 'Cosmic rankings';
@@ -495,7 +495,9 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   const next = miningLevels[miningLevel];
   const balance = Number(user.fc);
   const elapsed = mining ? Math.max(0, now - Date.parse(mining.last_claimed_at)) : 0;
-  const capacity = mining?.capacity ?? data!.miningConfig?.mining?.capacity ?? rate * 60;
+  const storageLevel = data!.mainStorageLevel ?? 1;
+  const nextStorage = data!.mainStorageLevels?.[storageLevel];
+  const capacity = mining?.capacity ?? data!.miningConfig?.mining?.capacity ?? 200;
   const pending = Math.min(capacity, Math.floor(elapsed / (60000 / rate)));
   const owned = (data!.equipment ?? []).filter(item => data!.purchases.some(purchase => purchase.item_id === item.id));
   const devices = owned.filter(item => item.kind === 'miner');
@@ -609,6 +611,27 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
        {unavailable && <p className="muted sm">{unavailable}</p>}
       </div>
      </> : <p className="press-upgrade-action gold-text"><Trophy size={18}/> {t('maxPress')}</p>}
+    </Card>
+   </>}
+   {data!.mainStorageLevels && <>
+    <SectionHeader title={{uz:'Asosiy mining sig‘imi',ru:'Вместимость основного майнера',en:'Main miner capacity'}[lang]}/>
+    <Card className="press-upgrades">
+     <div className="press-upgrade-head"><strong>{t('level')} {storageLevel}</strong><span className="gold-text">{number(data!.mainStorageLevels[storageLevel - 1].capacity)} FC</span></div>
+     {nextStorage && <>
+      <div className="press-next">
+       <span className="press-step"><Coins size={17} aria-hidden="true"/></span>
+       <span><strong>{t('level')} {storageLevel + 1}</strong><small>{storageLabel} · {number(nextStorage.capacity)} FC</small></span>
+       <strong className="press-price">{number(nextStorage.price)} FC</strong>
+      </div>
+      <div className="press-upgrade-action">
+       <button className="primary-btn" disabled={!!busy || active || balance < nextStorage.price}
+        onClick={()=>action('storage-upgrade', '/mining/storage-upgrade/' + (storageLevel + 1))}>
+        <Coins size={17} aria-hidden="true"/>{{uz:'Sig‘imni oshirish',ru:'Увеличить вместимость',en:'Upgrade capacity'}[lang]}
+       </button>
+       {active && <p className="muted sm">{t('error_mining_upgrade_active')}</p>}
+       {!active && balance < nextStorage.price && <p className="muted sm">{t('error_insufficient_fc')}</p>}
+      </div>
+     </>}
     </Card>
    </>}
    <details className="mining-history">
