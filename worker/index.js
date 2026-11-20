@@ -268,6 +268,7 @@ async function bootstrap(db, state, now, env) {
     db.prepare(`SELECT id, json_extract(state, '$.user.created_at') AS created_at
       FROM accounts WHERE referred_by = ? ORDER BY created_at DESC`).bind(state.user.id),
     db.prepare(`SELECT json_extract(state, '$.user.first_name') AS first_name,
+      json_extract(state, '$.user.avatar') AS avatar,
       json_extract(state, '$.user.level') AS level, json_extract(state, '$.user.xp') AS xp
       FROM accounts ORDER BY json_extract(state, '$.user.xp') DESC, id LIMIT 10`),
   ]);
@@ -280,7 +281,7 @@ async function bootstrap(db, state, now, env) {
   const isAdmin = Boolean(env.COINOVA_ADMIN_ID && state.user.id === env.COINOVA_ADMIN_ID);
   const configured = await campaigns(db, env);
   return { ...visible, payouts: (payouts ?? []).map(cleanPayout), payoutEnabled: payoutEnabled(env), telegramLinked: Boolean(telegramId), telegramBot: env.TELEGRAM_BOT_TOKEN ? env.TELEGRAM_BOT_USERNAME : undefined,
-    isAdmin, ...(isAdmin ? { managedTasks: configured } : {}), miningLevel: state.miningLevel ?? 1, miningLevels, leaders: leaderboard.results, serverTime: now, equipment, miningConfig: miningConfig(state), tasks: [...tasks, ...configured.map(({ secret, ...task }) => task)], shop };
+    isAdmin, ...(isAdmin ? { managedTasks: configured } : {}), miningLevel: state.miningLevel ?? 1, miningLevels, leaders: leaderboard.results.map(({ avatar, ...leader }, index) => index < 3 ? { ...leader, avatar } : leader), serverTime: now, equipment, miningConfig: miningConfig(state), tasks: [...tasks, ...configured.map(({ secret, ...task }) => task)], shop };
 }
 
 async function apply(state, path, date, referralFC, env, db, body) {
