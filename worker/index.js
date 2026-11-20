@@ -37,20 +37,20 @@ const equipment = [
   ["fc_storage_9", "Nova xazinasi", "storage", "FC", 10500, 6500, 28],
   ["fc_storage_10", "Galaktik depo", "storage", "FC", 15000, 9000, 29],
   ["rc_miner_1", "Sapfir burg‘u", "miner", "RC", 65, 30, 30],
-  ["rc_miner_2", "Zumrad ekskavatori", "miner", "RC", 85, 55, 31],
-  ["rc_miner_3", "Oltin kon roboti", "miner", "RC", 115, 80, 32],
-  ["rc_miner_4", "Orbital kombayn", "miner", "RC", 160, 110, 33],
-  ["rc_miner_5", "Yulduz qurilmasi", "miner", "RC", 220, 150, 34],
+  ["rc_miner_2", "Zumrad ekskavatori", "miner", "RC", 100, 55, 31],
+  ["rc_miner_3", "Oltin kon roboti", "miner", "RC", 160, 80, 32],
+  ["rc_miner_4", "Orbital kombayn", "miner", "RC", 250, 110, 33],
+  ["rc_miner_5", "Yulduz qurilmasi", "miner", "RC", 390, 150, 34],
   ["rc_boost_1", "Supero‘tkazgich chip", "boost", "RC", 60, 25, 35],
-  ["rc_boost_2", "Zumrad turbina", "boost", "RC", 75, 40, 36],
-  ["rc_boost_3", "Amber tezlatkich", "boost", "RC", 95, 55, 37],
-  ["rc_boost_4", "Fusion linzasi", "boost", "RC", 125, 70, 38],
-  ["rc_boost_5", "Fazo dvigateli", "boost", "RC", 170, 90, 39],
+  ["rc_boost_2", "Zumrad turbina", "boost", "RC", 90, 40, 36],
+  ["rc_boost_3", "Amber tezlatkich", "boost", "RC", 140, 55, 37],
+  ["rc_boost_4", "Fusion linzasi", "boost", "RC", 210, 70, 38],
+  ["rc_boost_5", "Fazo dvigateli", "boost", "RC", 320, 90, 39],
   ["rc_storage_1", "Sapfir kapsula", "storage", "RC", 55, 2000, 40],
-  ["rc_storage_2", "Zumrad konteyner", "storage", "RC", 65, 4000, 41],
-  ["rc_storage_3", "Oltin seyf", "storage", "RC", 80, 6500, 42],
-  ["rc_storage_4", "Rubin bunker", "storage", "RC", 105, 9500, 43],
-  ["rc_storage_5", "Orbital depo", "storage", "RC", 140, 14000, 44],
+  ["rc_storage_2", "Zumrad konteyner", "storage", "RC", 80, 4000, 41],
+  ["rc_storage_3", "Oltin seyf", "storage", "RC", 120, 6500, 42],
+  ["rc_storage_4", "Rubin bunker", "storage", "RC", 180, 9500, 43],
+  ["rc_storage_5", "Orbital depo", "storage", "RC", 270, 14000, 44],
 ].map(([id, name, kind, currency, price, value, art]) => ({ id, name, kind, currency, price, value, art }));
 const shop = [
   { id: 'nebula_avatar', price: 50 },
@@ -97,6 +97,16 @@ async function campaigns(db, env) {
     .bind(env.COINOVA_ADMIN_ID).first();
   const configured = JSON.parse(row?.campaigns ?? '[]');
   return configured.some(task => task.id === defaultCampaign.id) ? configured : [defaultCampaign, ...configured];
+}
+
+const rcBundleItems = [...equipment.filter(item => item.currency === 'RC'), ...shop];
+
+async function activeShopBundle(db, env, time) {
+  if (!env.COINOVA_ADMIN_ID) return null;
+  const row = await db.prepare("SELECT json_extract(state, '$.shopBundle') AS bundle FROM accounts WHERE id = ?")
+    .bind(env.COINOVA_ADMIN_ID).first();
+  const bundle = JSON.parse(row?.bundle ?? 'null');
+  return bundle && bundle.endsAt > time ? bundle : null;
 }
 
 const exchangeRate = 100000;
@@ -277,11 +287,11 @@ async function bootstrap(db, state, now, env) {
   state.transactions = [...state.transactions, ...referrals.results.slice(0, 50).map(ref => ({
     ...ref, currency: 'FC', delta: 50, reason: 'referral',
   }))].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 50);
-  const { campaigns: privateCampaigns, telegramBotProofs, telegramId, payouts, exchangeIds, ...visible } = state;
+  const { campaigns: privateCampaigns, telegramBotProofs, telegramId, payouts, exchangeIds, shopBundle: savedShopBundle, ...visible } = state;
   const isAdmin = Boolean(env.COINOVA_ADMIN_ID && state.user.id === env.COINOVA_ADMIN_ID);
   const configured = await campaigns(db, env);
   return { ...visible, payouts: (payouts ?? []).map(cleanPayout), payoutEnabled: payoutEnabled(env), telegramLinked: Boolean(telegramId), telegramBot: env.TELEGRAM_BOT_TOKEN ? env.TELEGRAM_BOT_USERNAME : undefined,
-    isAdmin, ...(isAdmin ? { managedTasks: configured } : {}), miningLevel: state.miningLevel ?? 1, miningLevels, leaders: leaderboard.results.map(({ avatar, ...leader }, index) => index < 3 ? { ...leader, avatar } : leader), serverTime: now, equipment, miningConfig: miningConfig(state), tasks: [...tasks, ...configured.map(({ secret, ...task }) => task)], shop };
+    shopBundle: await activeShopBundle(db, env, Date.parse(now)), isAdmin, ...(isAdmin ? { managedTasks: configured } : {}), miningLevel: state.miningLevel ?? 1, miningLevels, leaders: leaderboard.results.map(({ avatar, ...leader }, index) => index < 3 ? { ...leader, avatar } : leader), serverTime: now, equipment, miningConfig: miningConfig(state), tasks: [...tasks, ...configured.map(({ secret, ...task }) => task)], shop };
 }
 
 async function apply(state, path, date, referralFC, env, db, body) {
@@ -294,6 +304,30 @@ async function apply(state, path, date, referralFC, env, db, body) {
   }
   const now = date.toISOString();
   const today = day(date);
+  if (path === '/admin/shop-bundle') {
+    if (!env.COINOVA_ADMIN_ID || state.user.id !== env.COINOVA_ADMIN_ID) fail('forbidden', 403);
+    const { itemIds, price } = body ?? {};
+    if (!Array.isArray(itemIds) || itemIds.length < 2 || itemIds.length > 5 ||
+        new Set(itemIds).size !== itemIds.length || !Number.isSafeInteger(price) || price < 50) fail('invalid_bundle', 400);
+    const items = itemIds.map(id => rcBundleItems.find(item => item.id === id));
+    if (items.some(item => !item) || price >= items.reduce((total, item) => total + item.price, 0)) fail('invalid_bundle', 400);
+    state.shopBundle = { id: crypto.randomUUID(), itemIds, price, endsAt: date.getTime() + 7200000 };
+    return;
+  }
+  const bundleId = path.match(/^\/shop\/bundle\/([a-f0-9-]+)\/buy$/)?.[1];
+  if (bundleId) {
+    const bundle = await activeShopBundle(db, env, Date.now());
+    if (bundle?.id !== bundleId) fail('bundle_expired', 409);
+    if (bundle.itemIds.some(id => state.purchases.some(purchase => purchase.item_id === id))) fail('already_owned');
+    const before = miningConfig(state);
+    for (const [id, config] of Object.entries(before)) {
+      const session = id === 'mining' ? state.mining : state.deviceMining?.[id];
+      if (session && session.rate == null) Object.assign(session, config);
+    }
+    record(state, 'RC', -bundle.price, 'shop', now);
+    state.purchases.push(...bundle.itemIds.map(id => ({ item_id: id, created_at: now })));
+    return;
+  }
   const upgradeTarget = path.match(/^\/mining\/upgrade\/(\d+)$/)?.[1];
   const level = state.miningLevel ?? 1;
   if (upgradeTarget) {
@@ -472,7 +506,7 @@ async function api(request, env, url) {
     return json(await bootstrap(db, JSON.parse(row.state), now, env));
   }
   if (request.method !== 'POST') return json({ error: 'not_found' }, 404);
-  const body = path === '/profile/avatar' ? await input(request, 46000) : ['/telegram/link','/admin/task','/wallet/exchange','/wallet/withdraw'].includes(path) ? await input(request) : undefined;
+  const body = path === '/profile/avatar' ? await input(request, 46000) : ['/telegram/link','/admin/task','/admin/shop-bundle','/wallet/exchange','/wallet/withdraw'].includes(path) ? await input(request) : undefined;
   for (let attempt = 0; attempt < 5; attempt++) {
     const row = await db.prepare('SELECT version, state FROM accounts WHERE subject = ?').bind(subject).first();
     if (!row) return json({ error: 'sign_in_required' }, 401);
