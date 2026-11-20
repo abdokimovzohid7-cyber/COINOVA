@@ -1264,3 +1264,12 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 
 .shop-art.shop-device-art{display:block;height:auto;aspect-ratio:1;overflow:hidden;background:#100b24}
 .shop-device-art img{display:block;width:100%;height:100%;object-fit:cover}
+
+.equipment-category{margin-block:12px;border:1px solid #c193ea36;border-radius:16px;padding:0 10px;background:#1b112e}
+.equipment-category summary{cursor:pointer;padding:13px 4px;font-weight:700;color:#f0d8ae}
+.equipment-shop-grid{padding-bottom:10px}
+.equipment-art{width:100%;aspect-ratio:1;background:#120b23 url('/equipment-atlas.webp') no-repeat;background-size:500% 900%;border-radius:12px}
+.mining-modifiers{display:flex;flex-wrap:wrap;gap:8px;margin-block:12px}
+.mining-modifier{display:flex;align-items:center;gap:8px;padding:8px}
+.mining-modifier .equipment-art{width:55px;flex:none}
+@media(max-width:700px){.equipment-shop-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.equipment-shop-grid .shop-item{min-width:0;padding:8px}}

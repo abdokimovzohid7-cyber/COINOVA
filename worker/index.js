@@ -5,10 +5,53 @@ const tasks = [
   { id: 'daily_explore', fc: 15, xp: 20, type: 'daily' },
   { id: 'daily_mining', fc: 20, xp: 35, type: 'once' },
 ];
-const miningDevices = [
-  { id: 'lunar_drill', price: 500, rate: 6 },
-  { id: 'plasma_refinery', price: 1500, rate: 12 },
-];
+const equipment = [
+  ["lunar_drill", "Oy burg‘usi", "miner", "FC", 500, 6, 0],
+  ["plasma_refinery", "Plazma qurilmasi", "miner", "FC", 1500, 12, 1],
+  ["fc_miner_3", "Meteor ekskavatori", "miner", "FC", 2500, 18, 2],
+  ["fc_miner_4", "Ion qazgichi", "miner", "FC", 4000, 24, 3],
+  ["fc_miner_5", "Kristall kombayni", "miner", "FC", 6000, 30, 4],
+  ["fc_miner_6", "Asteroid roboti", "miner", "FC", 9000, 40, 5],
+  ["fc_miner_7", "Orbital rig", "miner", "FC", 13000, 50, 6],
+  ["fc_miner_8", "Kvant burg‘usi", "miner", "FC", 18000, 65, 7],
+  ["fc_miner_9", "Nova reaktori", "miner", "FC", 25000, 80, 8],
+  ["fc_miner_10", "Galaktik kon", "miner", "FC", 35000, 100, 9],
+  ["fc_boost_1", "Ion chipi", "boost", "FC", 400, 5, 10],
+  ["fc_boost_2", "Turbo g‘altak", "boost", "FC", 800, 8, 11],
+  ["fc_boost_3", "Lazer moduli", "boost", "FC", 1400, 12, 12],
+  ["fc_boost_4", "Foton kuchaytirgich", "boost", "FC", 2200, 16, 13],
+  ["fc_boost_5", "Plazma turbina", "boost", "FC", 3200, 20, 14],
+  ["fc_boost_6", "Impuls yadro", "boost", "FC", 4600, 25, 15],
+  ["fc_boost_7", "Graviton moduli", "boost", "FC", 6500, 30, 16],
+  ["fc_boost_8", "Kvant protsessor", "boost", "FC", 9000, 38, 17],
+  ["fc_boost_9", "Nova katalizator", "boost", "FC", 12500, 45, 18],
+  ["fc_boost_10", "Galaktik tezlatkich", "boost", "FC", 17500, 55, 19],
+  ["fc_storage_1", "Oy kapsulasi", "storage", "FC", 350, 200, 20],
+  ["fc_storage_2", "Kristall quti", "storage", "FC", 650, 400, 21],
+  ["fc_storage_3", "Titan konteyner", "storage", "FC", 1100, 700, 22],
+  ["fc_storage_4", "Plazma rezervuar", "storage", "FC", 1700, 1000, 23],
+  ["fc_storage_5", "Orbital sandiq", "storage", "FC", 2500, 1500, 24],
+  ["fc_storage_6", "Meteor bunker", "storage", "FC", 3600, 2200, 25],
+  ["fc_storage_7", "Graviton ombor", "storage", "FC", 5200, 3200, 26],
+  ["fc_storage_8", "Kvant seyf", "storage", "FC", 7500, 4600, 27],
+  ["fc_storage_9", "Nova xazinasi", "storage", "FC", 10500, 6500, 28],
+  ["fc_storage_10", "Galaktik depo", "storage", "FC", 15000, 9000, 29],
+  ["rc_miner_1", "Sapfir burg‘u", "miner", "RC", 45, 30, 30],
+  ["rc_miner_2", "Zumrad ekskavatori", "miner", "RC", 85, 55, 31],
+  ["rc_miner_3", "Oltin kon roboti", "miner", "RC", 140, 80, 32],
+  ["rc_miner_4", "Orbital kombayn", "miner", "RC", 220, 110, 33],
+  ["rc_miner_5", "Yulduz qurilmasi", "miner", "RC", 350, 150, 34],
+  ["rc_boost_1", "Supero‘tkazgich chip", "boost", "RC", 35, 25, 35],
+  ["rc_boost_2", "Zumrad turbina", "boost", "RC", 65, 40, 36],
+  ["rc_boost_3", "Amber tezlatkich", "boost", "RC", 105, 55, 37],
+  ["rc_boost_4", "Fusion linzasi", "boost", "RC", 170, 70, 38],
+  ["rc_boost_5", "Fazo dvigateli", "boost", "RC", 270, 90, 39],
+  ["rc_storage_1", "Sapfir kapsula", "storage", "RC", 30, 2000, 40],
+  ["rc_storage_2", "Zumrad konteyner", "storage", "RC", 55, 4000, 41],
+  ["rc_storage_3", "Oltin seyf", "storage", "RC", 90, 6500, 42],
+  ["rc_storage_4", "Rubin bunker", "storage", "RC", 145, 9500, 43],
+  ["rc_storage_5", "Orbital depo", "storage", "RC", 230, 14000, 44],
+].map(([id, name, kind, currency, price, value, art]) => ({ id, name, kind, currency, price, value, art }));
 const shop = [
   { id: 'nebula_avatar', price: 20 },
   { id: 'gold_orbit', price: 45 },
@@ -27,6 +70,18 @@ const miningLevels = [
   { price: 6000, rate: 75 },
   { price: 8500, rate: 100 },
 ];
+
+function miningConfig(state) {
+  const level = state.miningLevel ?? 1;
+  const owned = equipment.filter(item => state.purchases.some(purchase => purchase.item_id === item.id));
+  const boost = Math.max(0, ...owned.filter(item => item.kind === 'boost').map(item => item.value));
+  const storage = Math.max(0, ...owned.filter(item => item.kind === 'storage').map(item => item.value));
+  const configure = (baseRate, minutes) => ({ rate: baseRate * (100 + boost) / 100, capacity: baseRate * minutes + storage });
+  return Object.fromEntries([
+    ['mining', configure(miningLevels[level - 1].rate, 60)],
+    ...owned.filter(item => item.kind === 'miner').map(item => [item.id, configure(item.value, 60 + (level - 1) * 15)]),
+  ]);
+}
 
 const json = (data, status = 200) => Response.json(data, {
   status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
@@ -225,7 +280,7 @@ async function bootstrap(db, state, now, env) {
   const isAdmin = Boolean(env.COINOVA_ADMIN_ID && state.user.id === env.COINOVA_ADMIN_ID);
   const configured = await campaigns(db, env);
   return { ...visible, payouts: (payouts ?? []).map(cleanPayout), payoutEnabled: payoutEnabled(env), telegramLinked: Boolean(telegramId), telegramBot: env.TELEGRAM_BOT_TOKEN ? env.TELEGRAM_BOT_USERNAME : undefined,
-    isAdmin, ...(isAdmin ? { managedTasks: configured } : {}), miningLevel: state.miningLevel ?? 1, miningLevels, leaders: leaderboard.results, serverTime: now, miningStorage: miningLevels[(state.miningLevel ?? 1) - 1].rate * 60, miningDevices, tasks: [...tasks, ...configured.map(({ secret, ...task }) => task)], shop };
+    isAdmin, ...(isAdmin ? { managedTasks: configured } : {}), miningLevel: state.miningLevel ?? 1, miningLevels, leaders: leaderboard.results, serverTime: now, equipment, miningConfig: miningConfig(state), tasks: [...tasks, ...configured.map(({ secret, ...task }) => task)], shop };
 }
 
 async function apply(state, path, date, referralFC, env, db, body) {
@@ -240,7 +295,6 @@ async function apply(state, path, date, referralFC, env, db, body) {
   const today = day(date);
   const upgradeTarget = path.match(/^\/mining\/upgrade\/(\d+)$/)?.[1];
   const level = state.miningLevel ?? 1;
-  const rate = miningLevels[level - 1].rate;
   if (upgradeTarget) {
     if (state.mining) fail('mining_upgrade_active');
     const target = Number(upgradeTarget);
@@ -293,24 +347,23 @@ async function apply(state, path, date, referralFC, env, db, body) {
       network: body.card.startsWith('8600') ? 'Uzcard' : 'Humo', card: await cardCipher(env, body.card), holder: await cardCipher(env, holder), createdAt: now }, ...payouts];
     return;
   }
-  const miningAction = path.match(/^\/mining\/(?:(lunar_drill|plasma_refinery)\/)?(start|claim|stop)$/);
+  const miningAction = path.match(/^\/mining\/(?:([a-z0-9_]+)\/)?(start|claim|stop)$/);
   if (miningAction) {
     const [, deviceId, operation] = miningAction;
-    if (deviceId && !state.purchases.some(item => item.item_id === deviceId)) fail('not_found', 404);
-    const device = miningDevices.find(item => item.id === deviceId);
-    const deviceRate = device?.rate ?? rate;
-    const capacity = device ? deviceRate * (60 + (level - 1) * 15) : rate * 60;
+    const config = miningConfig(state)[deviceId ?? 'mining'];
+    if (!config || (deviceId && !equipment.some(item => item.id === deviceId && item.kind === 'miner'))) fail('not_found', 404);
     const sessions = deviceId ? (state.deviceMining ??= {}) : state;
     const slot = deviceId ?? 'mining';
     if (operation === 'start') {
       if (sessions[slot]) fail('mining_active');
-      sessions[slot] = { id: crypto.randomUUID(), started_at: now, last_claimed_at: now, earned_fc: 0 };
+      sessions[slot] = { id: crypto.randomUUID(), started_at: now, last_claimed_at: now, earned_fc: 0, ...config };
       return;
     }
     const mining = sessions[slot];
     if (!mining) fail('mining_inactive');
     const elapsed = Math.max(0, date.getTime() - Date.parse(mining.last_claimed_at));
-    const interval = 60000 / deviceRate;
+    const capacity = mining.capacity ?? config.capacity;
+    const interval = 60000 / (mining.rate ?? config.rate);
     const coins = Math.min(capacity, Math.floor(elapsed / interval));
     if (!coins && operation === 'claim') fail('mining_too_early');
     const xp = Math.floor((mining.earned_fc + coins) / 3) - Math.floor(mining.earned_fc / 3);
@@ -358,11 +411,19 @@ async function apply(state, path, date, referralFC, env, db, body) {
     return { awardedFC: task.fc };
   }
   const itemId = path.match(/^\/shop\/([^/]+)\/buy$/)?.[1];
-  const device = miningDevices.find(product => product.id === itemId);
+  const device = equipment.find(product => product.id === itemId);
   const item = device ?? shop.find(product => product.id === itemId);
   if (item) {
     if (state.purchases.some(purchase => purchase.item_id === item.id)) fail('already_owned');
-    record(state, device ? 'FC' : 'RC', -item.price, 'shop', now, device ? referralFC : 0);
+    if (device && device.kind !== 'miner') {
+      const before = miningConfig(state);
+      for (const [id, config] of Object.entries(before)) {
+        const session = id === 'mining' ? state.mining : state.deviceMining?.[id];
+        if (session && session.rate == null) Object.assign(session, config);
+      }
+    }
+    const currency = device?.currency ?? 'RC';
+    record(state, currency, -item.price, 'shop', now, currency === 'FC' ? referralFC : 0);
     state.purchases.push({ item_id: item.id, created_at: now });
     return;
   }
