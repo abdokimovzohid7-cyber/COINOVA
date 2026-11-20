@@ -6,16 +6,16 @@ const tasks = [
   { id: 'daily_mining', fc: 20, xp: 35, type: 'once' },
 ];
 const equipment = [
-  ["lunar_drill", "Oy burg‘usi", "miner", "FC", 500, 6, 0],
-  ["plasma_refinery", "Plazma qurilmasi", "miner", "FC", 1500, 12, 1],
-  ["fc_miner_3", "Meteor ekskavatori", "miner", "FC", 2500, 18, 2],
-  ["fc_miner_4", "Ion qazgichi", "miner", "FC", 4000, 24, 3],
-  ["fc_miner_5", "Kristall kombayni", "miner", "FC", 6000, 30, 4],
-  ["fc_miner_6", "Asteroid roboti", "miner", "FC", 9000, 40, 5],
-  ["fc_miner_7", "Orbital rig", "miner", "FC", 13000, 50, 6],
-  ["fc_miner_8", "Kvant burg‘usi", "miner", "FC", 18000, 65, 7],
-  ["fc_miner_9", "Nova reaktori", "miner", "FC", 25000, 80, 8],
-  ["fc_miner_10", "Galaktik kon", "miner", "FC", 35000, 100, 9],
+  ["lunar_drill", "Oy burg‘usi", "miner", "FC", 500, 8, 0],
+  ["plasma_refinery", "Plazma qurilmasi", "miner", "FC", 1500, 15, 1],
+  ["fc_miner_3", "Meteor ekskavatori", "miner", "FC", 2500, 23, 2],
+  ["fc_miner_4", "Ion qazgichi", "miner", "FC", 4000, 30, 3],
+  ["fc_miner_5", "Kristall kombayni", "miner", "FC", 4800, 38, 4],
+  ["fc_miner_6", "Asteroid roboti", "miner", "FC", 7200, 50, 5],
+  ["fc_miner_7", "Orbital rig", "miner", "FC", 10400, 63, 6],
+  ["fc_miner_8", "Kvant burg‘usi", "miner", "FC", 14400, 81, 7],
+  ["fc_miner_9", "Nova reaktori", "miner", "FC", 20000, 100, 8],
+  ["fc_miner_10", "Galaktik kon", "miner", "FC", 28000, 125, 9],
   ["fc_boost_1", "Ion chipi", "boost", "FC", 400, 5, 10],
   ["fc_boost_2", "Turbo g‘altak", "boost", "FC", 800, 8, 11],
   ["fc_boost_3", "Lazer moduli", "boost", "FC", 1400, 12, 12],
@@ -37,20 +37,20 @@ const equipment = [
   ["fc_storage_9", "Nova xazinasi", "storage", "FC", 10500, 6500, 28],
   ["fc_storage_10", "Galaktik depo", "storage", "FC", 15000, 9000, 29],
   ["rc_miner_1", "Sapfir burg‘u", "miner", "RC", 65, 30, 30],
-  ["rc_miner_2", "Zumrad ekskavatori", "miner", "RC", 100, 55, 31],
-  ["rc_miner_3", "Oltin kon roboti", "miner", "RC", 160, 80, 32],
-  ["rc_miner_4", "Orbital kombayn", "miner", "RC", 250, 110, 33],
-  ["rc_miner_5", "Yulduz qurilmasi", "miner", "RC", 390, 150, 34],
+  ["rc_miner_2", "Zumrad ekskavatori", "miner", "RC", 90, 55, 31],
+  ["rc_miner_3", "Oltin kon roboti", "miner", "RC", 140, 80, 32],
+  ["rc_miner_4", "Orbital kombayn", "miner", "RC", 220, 110, 33],
+  ["rc_miner_5", "Yulduz qurilmasi", "miner", "RC", 340, 150, 34],
   ["rc_boost_1", "Supero‘tkazgich chip", "boost", "RC", 60, 25, 35],
-  ["rc_boost_2", "Zumrad turbina", "boost", "RC", 90, 40, 36],
-  ["rc_boost_3", "Amber tezlatkich", "boost", "RC", 140, 55, 37],
-  ["rc_boost_4", "Fusion linzasi", "boost", "RC", 210, 70, 38],
-  ["rc_boost_5", "Fazo dvigateli", "boost", "RC", 320, 90, 39],
+  ["rc_boost_2", "Zumrad turbina", "boost", "RC", 80, 40, 36],
+  ["rc_boost_3", "Amber tezlatkich", "boost", "RC", 120, 55, 37],
+  ["rc_boost_4", "Fusion linzasi", "boost", "RC", 185, 70, 38],
+  ["rc_boost_5", "Fazo dvigateli", "boost", "RC", 280, 90, 39],
   ["rc_storage_1", "Sapfir kapsula", "storage", "RC", 55, 2000, 40],
-  ["rc_storage_2", "Zumrad konteyner", "storage", "RC", 80, 4000, 41],
-  ["rc_storage_3", "Oltin seyf", "storage", "RC", 120, 6500, 42],
-  ["rc_storage_4", "Rubin bunker", "storage", "RC", 180, 9500, 43],
-  ["rc_storage_5", "Orbital depo", "storage", "RC", 270, 14000, 44],
+  ["rc_storage_2", "Zumrad konteyner", "storage", "RC", 75, 4000, 41],
+  ["rc_storage_3", "Oltin seyf", "storage", "RC", 105, 6500, 42],
+  ["rc_storage_4", "Rubin bunker", "storage", "RC", 155, 9500, 43],
+  ["rc_storage_5", "Orbital depo", "storage", "RC", 235, 14000, 44],
 ].map(([id, name, kind, currency, price, value, art]) => ({ id, name, kind, currency, price, value, art }));
 const shop = [
   { id: 'nebula_avatar', price: 50 },
@@ -59,16 +59,16 @@ const shop = [
 ];
 
 const miningLevels = [
-  { price: 0, rate: 12 },
-  { price: 120, rate: 15 },
-  { price: 300, rate: 20 },
-  { price: 600, rate: 24 },
-  { price: 1100, rate: 30 },
-  { price: 1800, rate: 40 },
-  { price: 2800, rate: 48 },
-  { price: 4200, rate: 60 },
-  { price: 6000, rate: 75 },
-  { price: 8500, rate: 100 },
+  { price: 0, rate: 15 },
+  { price: 120, rate: 19 },
+  { price: 300, rate: 25 },
+  { price: 600, rate: 30 },
+  { price: 1100, rate: 38 },
+  { price: 1800, rate: 50 },
+  { price: 2800, rate: 60 },
+  { price: 4200, rate: 75 },
+  { price: 6000, rate: 94 },
+  { price: 8500, rate: 125 },
 ];
 
 function miningConfig(state) {
@@ -106,7 +106,9 @@ async function activeShopBundle(db, env, time) {
   const row = await db.prepare("SELECT json_extract(state, '$.shopBundle') AS bundle FROM accounts WHERE id = ?")
     .bind(env.COINOVA_ADMIN_ID).first();
   const bundle = JSON.parse(row?.bundle ?? 'null');
-  return bundle && bundle.endsAt > time ? bundle : null;
+  if (!bundle || bundle.endsAt <= time) return null;
+  const total = rcBundleItems.filter(item => bundle.itemIds.includes(item.id)).reduce((sum, item) => sum + item.price, 0);
+  return bundle.price < total ? bundle : null;
 }
 
 const exchangeRate = 100000;
