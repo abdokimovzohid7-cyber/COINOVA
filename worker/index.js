@@ -71,6 +71,14 @@ const miningLevels = [
   { price: 8500, rate: 1500 },
 ];
 
+const mainStorageLevels = [
+  { capacity: 200, price: 0 },
+  { capacity: 350, price: 150 },
+  { capacity: 500, price: 350 },
+  { capacity: 750, price: 700 },
+  { capacity: 1000, price: 1200 },
+];
+
 const deviceUpgradePrices = [0, 50, 65, 85, 110, 145, 190, 250, 330, 440];
 
 function deviceBaseRate(item, level) {
@@ -90,7 +98,7 @@ function miningConfig(state) {
   const multiplier = (100 + boost) / 100 * Math.min(1, 3000 / boostedTotal);
   const configure = (baseRate, minutes) => ({ rate: baseRate * multiplier, capacity: baseRate * minutes + storage });
   return Object.fromEntries([
-    ['mining', configure(mainRate, 60)],
+    ['mining', { rate: mainRate * multiplier, capacity: mainStorageLevels[(state.mainStorageLevel ?? 1) - 1].capacity }],
     ...miners.map(item => [item.id, configure(item.rate, 60 + (level - 1) * 15)]),
   ]);
 }
@@ -305,7 +313,7 @@ async function bootstrap(db, state, now, env) {
   const isAdmin = Boolean(env.COINOVA_ADMIN_ID && state.user.id === env.COINOVA_ADMIN_ID);
   const configured = await campaigns(db, env);
   return { ...visible, payouts: (payouts ?? []).map(cleanPayout), payoutEnabled: payoutEnabled(env), telegramLinked: Boolean(telegramId), telegramBot: env.TELEGRAM_BOT_TOKEN ? env.TELEGRAM_BOT_USERNAME : undefined,
-    shopBundle: await activeShopBundle(db, env, Date.parse(now)), isAdmin, ...(isAdmin ? { managedTasks: configured } : {}), miningLevel: state.miningLevel ?? 1, miningLevels, deviceUpgradePrices, leaders: leaderboard.results.map(({ avatar, ...leader }, index) => index < 3 ? { ...leader, avatar } : leader), serverTime: now, equipment, miningConfig: miningConfig(state), tasks: [...tasks, ...configured.map(({ secret, ...task }) => task)], shop };
+    shopBundle: await activeShopBundle(db, env, Date.parse(now)), isAdmin, ...(isAdmin ? { managedTasks: configured } : {}), miningLevel: state.miningLevel ?? 1, miningLevels, mainStorageLevels, deviceUpgradePrices, leaders: leaderboard.results.map(({ avatar, ...leader }, index) => index < 3 ? { ...leader, avatar } : leader), serverTime: now, equipment, miningConfig: miningConfig(state), tasks: [...tasks, ...configured.map(({ secret, ...task }) => task)], shop };
 }
 
 async function apply(state, path, date, referralFC, env, db, body) {
@@ -353,6 +361,15 @@ async function apply(state, path, date, referralFC, env, db, body) {
     if (target !== current + 1 || target > deviceUpgradePrices.length) fail('mining_upgrade_order');
     record(state, 'RC', -deviceUpgradePrices[target - 1], 'mining_upgrade', now);
     state.deviceLevels = { ...state.deviceLevels, [itemId]: target };
+    return;
+  }
+  const storageTarget = path.match(/^\/mining\/storage-upgrade\/(\d+)$/)?.[1];
+  if (storageTarget) {
+    if (state.mining) fail('mining_upgrade_active');
+    const target = Number(storageTarget);
+    if (target !== (state.mainStorageLevel ?? 1) + 1 || target > mainStorageLevels.length) fail('mining_upgrade_order');
+    record(state, 'FC', -mainStorageLevels[target - 1].price, 'mining_storage_upgrade', now, referralFC);
+    state.mainStorageLevel = target;
     return;
   }
   const upgradeTarget = path.match(/^\/mining\/upgrade\/(\d+)$/)?.[1];
@@ -436,6 +453,7 @@ async function apply(state, path, date, referralFC, env, db, body) {
       state.miningHistory = [{ ...mining, ...(deviceId ? { deviceId } : {}), ended_at: now }, ...state.miningHistory].slice(0, 12);
       sessions[slot] = null;
     } else {
+      if (!deviceId) mining.capacity = config.capacity;
       mining.last_claimed_at = new Date(coins === capacity ? date.getTime() :
         Date.parse(mining.last_claimed_at) + coins * interval).toISOString();
     }
@@ -546,7 +564,7 @@ async function api(request, env, url) {
     const row = await db.prepare('SELECT version, state FROM accounts WHERE subject = ?').bind(subject).first();
     if (!row) return json({ error: 'sign_in_required' }, 401);
     const state = JSON.parse(row.state);
-    const referrals = (path.startsWith('/mining/upgrade/') || path === '/wallet/exchange' || path.startsWith('/shop/'))
+    const referrals = (path.startsWith('/mining/upgrade/') || path.startsWith('/mining/storage-upgrade/') || path === '/wallet/exchange' || path.startsWith('/shop/'))
       ? await db.prepare('SELECT COUNT(*) AS count FROM accounts WHERE referred_by = ?').bind(state.user.id).first()
       : null;
     const outcome = await apply(state, path, new Date(), 50 * (referrals?.count ?? 0), env, db, body);
