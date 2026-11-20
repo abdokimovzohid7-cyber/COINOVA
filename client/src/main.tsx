@@ -488,6 +488,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   </section>;
  }
  function HomePage(){const adventure={uz:'Kosmos seni kutmoqda.',ru:'Космос ждёт тебя.',en:'The cosmos awaits you.'};const salutation={uz:'Salom',ru:'Привет',en:'Hello'};const nickname = data!.user.username?.trim() || data!.user.first_name;return <HomeMotion><h1 className="cosmic-banner"><img src="/coinova-banner.webp" width={2048} height={682} alt="COINOVA · PLAY • EARN • GROW" lang="en" fetchPriority="high"/><span className="banner-wordmark-motion" aria-hidden="true"/><span className="banner-slogan-motion" aria-hidden="true"><span/><span/><span/></span></h1><section className="hero"><div className="stars"/><div className="hero-content"><span className="hero-badge"><Zap size={14}/> {lang==='uz'?'SENING KOSMIK SARGUZASHTING SHU YERDAN BOSHLANADI':lang==='ru'?'ТВОЁ КОСМИЧЕСКОЕ ПРИКЛЮЧЕНИЕ НАЧИНАЕТСЯ ЗДЕСЬ':'YOUR COSMIC ADVENTURE STARTS HERE'}</span><h2><span className="hero-greeting">{salutation[lang]}, <span className="gradient-text">{nickname}!</span></span><span className="hero-adventure">{adventure[lang]}</span></h2><HeroTypewriter key={lang} text={heroQuestion[lang]}/><button className="primary-btn" onClick={()=>changePage('mining')}><Rocket className="hero-launch-icon" size={19} aria-hidden="true"/>{t('startAdventure')}</button><div className="hero-metrics"><span><small>{lang==='uz'?'JAMI TAJRIBA':lang==='ru'?'ВСЕГО ОПЫТА':'TOTAL EXPERIENCE'}</small><strong><span className="hero-stat-number">{number(data!.user.xp)}</span> XP</strong></span><span><small>{lang==='uz'?'HOZIRGI DARAJA':lang==='ru'?'ТЕКУЩИЙ УРОВЕНЬ':'CURRENT LEVEL'}</small><strong><span className="hero-stat-number">{data!.user.level}</span> {t('level')}</strong></span></div></div><Astronaut/><FloatingCoins/><div className="astronaut-label"><Sparkles size={13}/>{lang==='uz'?'Kichik kosmonavt':lang==='ru'?'Маленький космонавт':'Little astronaut'}</div></section><div className="balance-grid">{renderBalance('fc')}{renderBalance('rc')}</div>{renderXP()}<div className="quick-section glass"><div className="quick-top"><div><span className="xp-eyebrow">{lang==='uz'?'TEZKOR KIRISH':lang==='ru'?'БЫСТРЫЙ ДОСТУП':'QUICK ACCESS'}</span><h2>{t('quick')}</h2></div><span className="quick-flare"><Sparkles size={24}/></span></div><div className="quick-grid">{[...extras,['mining',Pickaxe] as const,['bonus',Gift] as const].map(([key,Icon])=><button className="quick glass" key={key} onClick={()=>changePage(key as Page)}><span className="quick-icon"><Icon size={21}/></span><strong>{t(key as TranslationKey)}</strong><ChevronRight size={15} className="muted"/></button>)}</div></div><SectionHeader title={t('achievements')} to="leaderboard"/><Card className="achievement"><span className="trophy-bubble"><Trophy size={25}/></span><div><strong>{t('level')} {data!.user.level}</strong><p className="muted sm">{number(data!.user.xp)} XP · {t('totalReferrals')}: {data!.user.referral_count}</p></div><button className="icon-link" aria-label={t('leaderboard')} onClick={()=>changePage('leaderboard')}><ArrowRight/></button></Card></HomeMotion>}
+ const [islandSelection, setIslandSelection] = useState('press');
  function MiningPage(){
   const { mining, miningHistory, user, miningLevel = 1, miningLevels = [] } = data!;
   const active = !!mining;
@@ -498,15 +499,44 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   const capacity = mining?.capacity ?? data!.miningConfig?.mining?.capacity ?? 200;
   const pending = Math.min(capacity, Math.floor(elapsed / (60000 / rate)));
   const owned = (data!.equipment ?? []).filter(item => data!.purchases.some(purchase => purchase.item_id === item.id));
-  const devices = owned.filter(item => item.kind === 'miner');
-  const modifiers = (['boost','storage'] as const).flatMap(kind =>
-   owned.filter(item => item.kind === kind).sort((a,b)=>b.value-a.value).slice(0,1));
+  const devices = owned.filter(item => item.kind === 'miner' && item.id === islandSelection);
+  const modifiers = owned.filter(item => item.kind !== 'miner' && item.id === islandSelection);
+  const catalogue = [...(data!.equipment ?? [])].sort((a,b) => a.art - b.art);
+  const mainSelected = !owned.some(item => item.id === islandSelection);
+  const pressName = {uz:'Asosiy press',ru:'Основной пресс',en:'Main press'}[lang];
+  const islandName = {uz:'Mining oroli',ru:'Остров добычи',en:'Mining island'}[lang];
+  const slots = [null, ...catalogue];
   const storageLabel = lang === 'uz' ? 'Sig‘im' : lang === 'ru' ? 'Вместимость' : 'Capacity';
   const unavailable = active ? t('error_mining_upgrade_active') : next && balance < next.price ? t('error_insufficient_fc') : '';
   return <>
    <div className="page-heading"><span className="eyebrow"><Pickaxe size={15}/> {t('mining')}</span><h1>{t('mineTitle')}</h1><p>{t('mineDesc')}</p></div>
-   <div className={devices.length ? "mining-device-grid" : undefined}>
-   <Card className="mining-panel">
+   <section className="mining-island">
+    <h2>{islandName}</h2>
+    <p className="muted sm">{{uz:'Orolni chapga yoki o‘ngga suring',ru:'Листайте остров влево или вправо',en:'Swipe left or right to explore'}[lang]}</p>
+    <div className="mining-island-scroll" tabIndex={0} aria-label={islandName}>
+     <div className="mining-island-map">
+      {slots.map((item, index) => {
+       const row = index % 4;
+       const column = Math.floor(index / 4);
+       const id = item?.id ?? 'press';
+       const purchased = !item || owned.some(device => device.id === id);
+       const label = item?.name ?? pressName;
+       const selected = purchased && (item ? islandSelection === id : mainSelected);
+       return <button key={id} type="button" className="mining-island-slot" title={label}
+        aria-label={label} aria-pressed={selected} disabled={!purchased}
+        style={{left: `${6 + column * 7.7 + [0,2.1,-.6,1.1][row]}%`, top: `${[24,40,56,72][row] + (column % 3 - 1) * 1.8}%`}}
+        onClick={()=>setIslandSelection(id)}>
+        <span className="mining-island-platform">
+         {purchased ? item ? <EquipmentArt item={item}/> : <img src="/cosmic-press.webp" alt=""/> : <ShieldCheck size={17} aria-hidden="true"/>}
+        </span>
+        <span className="mining-island-label">{label}</span>
+       </button>;
+      })}
+     </div>
+    </div>
+   </section>
+   <div>
+   {mainSelected && <Card className="mining-panel">
     <figure className={'press-scene' + (active ? ' press-active' : '')}>
      <img src="/cosmic-press.webp" width={768} height={512} alt={t('pressScene')}/>
      {active && <PressAnimation/>}
@@ -534,7 +564,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
       </button>
      </>}
     </div>
-   </Card>
+   </Card>}
    {devices.map(device => {
     const deviceLevel = data!.deviceLevels?.[device.id] ?? 1;
     const upgradePrice = data!.deviceUpgradePrices?.[deviceLevel];
@@ -592,7 +622,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
     <Card className="mining-modifier" key={item.id}><EquipmentArt item={item}/><div><strong>{item.name}</strong>
      <div className="gold-text">+{number(item.value)}{item.kind === 'boost' ? '%' : ' FC'}</div></div></Card>
    )}</div>}
-   {miningLevels.length > 0 && <>
+   {mainSelected && miningLevels.length > 0 && <>
     <SectionHeader title={t('mining_upgrade')}/>
     <Card className="press-upgrades">
      <div className="press-upgrade-head"><strong>{t('balanceFC')}</strong><span className="gold-text">{number(balance)} FC</span></div>
