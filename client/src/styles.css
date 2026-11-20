@@ -1205,3 +1205,30 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
   border-radius: 50%;
   overflow: hidden;
 }
+
+.telegram-welcome {
+  position: relative;
+  isolation: isolate;
+  min-height: 100svh;
+  display: grid;
+  align-content: end;
+  justify-items: center;
+  overflow: hidden;
+  padding: 0 20px max(32px, env(safe-area-inset-bottom));
+  background: #100b26;
+}
+.telegram-welcome-art {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 69%;
+  z-index: -1;
+  background: linear-gradient(180deg, transparent 69%, #100b26 100%),
+    url('/telegram-welcome.webp') center 38% / cover no-repeat;
+}
+.telegram-welcome-language { position: absolute; top: 12px; right: 16px; z-index: 2; }
+.telegram-welcome-content { width: min(100%, 480px); text-align: center; margin-top: min(55svh, 480px); }
+.telegram-welcome-content h1 { margin: 0; font-size: clamp(40px, 13vw, 68px); letter-spacing: .075em; line-height: 1.05; }
+.telegram-welcome-content h1 span { color: #ffd893; }
+.telegram-welcome-content p { margin: 8px 0 0; }
+.telegram-welcome .telegram-welcome-action { width: 100%; min-height: 54px; margin-top: 24px; border-radius: 999px; justify-content: center; text-decoration: none; background: linear-gradient(105deg,#6032eb,#9836e8,#bb4ce9); }
+.telegram-welcome-content .telegram-welcome-note { margin-top: 12px; color: #bdb1d0; font-size: .86rem; }
