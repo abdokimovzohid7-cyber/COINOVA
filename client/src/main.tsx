@@ -323,7 +323,9 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
  }
  const today=tashkentDay(now);useEffect(()=>{localStorage.setItem('coinova-lang',lang);document.documentElement.lang=lang},[lang]);useEffect(()=>{setNow(Date.now());const id=window.setInterval(()=>setNow(Date.now()),page==='mining'?1000:30000);return()=>clearInterval(id)},[page]);
  async function reload(){
-  const ref = new URLSearchParams(location.search).get('ref');
+  const startParam = isRender ? new URLSearchParams(telegramWebApp()?.initData).get('start_param') : null;
+  const referralCode = startParam?.match(/^ref_([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})$/i)?.[1];
+  const ref = referralCode ?? new URLSearchParams(location.search).get('ref');
   const v=await request<State>('/bootstrap'+(ref?'?ref='+encodeURIComponent(ref):''));
   setData(v);setError('');
  }
@@ -606,7 +608,9 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
  </div>{avatarFailed && <p className="profile-avatar-error" role="alert">{avatarError}</p>}<h2>{data!.user.first_name}</h2><span className="tag gold">{t('level')} {data!.user.level}</span><span className="muted tiny user-id">ID: {data!.user.profile_id}</span></Card>{renderXP(true)}<SectionHeader title={t('stats')}/><div className="stat-grid"><Card><Trophy className="purple-text"/><strong>{number(data!.user.xp)}</strong><span className="muted sm">XP</span></Card><Card><Users className="purple-text"/><strong>{data!.user.referral_count}</strong><span className="muted sm">{t('totalReferrals')}</span></Card><Card><Clock className="purple-text"/><strong>{date(data!.user.created_at)}</strong><span className="muted sm">{t('memberSince')}</span></Card></div><SectionHeader title={t('settings')}/><Card className="settings-card">{renderTelegramSettings()}<button onClick={()=>changePage('referrals')}><Users size={19}/>{t('referrals')}<ChevronRight size={17}/></button><button onClick={()=>changePage('leaderboard')}><Trophy size={19}/>{t('leaderboard')}<ChevronRight size={17}/></button><button onClick={()=>changePage('coin')}><Coins size={19}/>{t('coin')}<ChevronRight size={17}/></button><a className="settings-link" href={authPath('signout')} target="_top"><LogOut size={19}/>{t('logout')}<ChevronRight size={17}/></a></Card></section>}
  function ReferralPage(){
   const {id,referral_count:count}=data!.user;
-  const link=new URL('/?ref='+encodeURIComponent(id),location.origin).href;
+  const link = isRender
+    ? 'https://t.me/coin_ova_bot?startapp=' + encodeURIComponent('ref_' + id)
+    : new URL('/?ref='+encodeURIComponent(id),location.origin).href;
   async function copyReferral(){
    try {
     await navigator.clipboard.writeText(link);
