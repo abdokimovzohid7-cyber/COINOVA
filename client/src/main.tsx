@@ -491,12 +491,10 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
  function MiningPage(){
   const { mining, miningHistory, user, miningLevel = 1, miningLevels = [] } = data!;
   const active = !!mining;
-  const rate = mining?.rate ?? data!.miningConfig?.mining?.rate ?? miningLevels[miningLevel - 1]?.rate ?? 12;
+  const rate = Math.min(1000, mining?.rate ?? data!.miningConfig?.mining?.rate ?? miningLevels[miningLevel - 1]?.rate ?? 12);
   const next = miningLevels[miningLevel];
   const balance = Number(user.fc);
   const elapsed = mining ? Math.max(0, now - Date.parse(mining.last_claimed_at)) : 0;
-  const storageLevel = data!.mainStorageLevel ?? 1;
-  const nextStorage = data!.mainStorageLevels?.[storageLevel];
   const capacity = mining?.capacity ?? data!.miningConfig?.mining?.capacity ?? 200;
   const pending = Math.min(capacity, Math.floor(elapsed / (60000 / rate)));
   const owned = (data!.equipment ?? []).filter(item => data!.purchases.some(purchase => purchase.item_id === item.id));
@@ -613,27 +611,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
      </> : <p className="press-upgrade-action gold-text"><Trophy size={18}/> {t('maxPress')}</p>}
     </Card>
    </>}
-   {data!.mainStorageLevels && <>
-    <SectionHeader title={{uz:'Asosiy mining sig‘imi',ru:'Вместимость основного майнера',en:'Main miner capacity'}[lang]}/>
-    <Card className="press-upgrades">
-     <div className="press-upgrade-head"><strong>{t('level')} {storageLevel}</strong><span className="gold-text">{number(data!.mainStorageLevels[storageLevel - 1].capacity)} FC</span></div>
-     {nextStorage && <>
-      <div className="press-next">
-       <span className="press-step"><Coins size={17} aria-hidden="true"/></span>
-       <span><strong>{t('level')} {storageLevel + 1}</strong><small>{storageLabel} · {number(nextStorage.capacity)} FC</small></span>
-       <strong className="press-price">{number(nextStorage.price)} FC</strong>
-      </div>
-      <div className="press-upgrade-action">
-       <button className="primary-btn" disabled={!!busy || active || balance < nextStorage.price}
-        onClick={()=>action('storage-upgrade', '/mining/storage-upgrade/' + (storageLevel + 1))}>
-        <Coins size={17} aria-hidden="true"/>{{uz:'Sig‘imni oshirish',ru:'Увеличить вместимость',en:'Upgrade capacity'}[lang]}
-       </button>
-       {active && <p className="muted sm">{t('error_mining_upgrade_active')}</p>}
-       {!active && balance < nextStorage.price && <p className="muted sm">{t('error_insufficient_fc')}</p>}
-      </div>
-     </>}
-    </Card>
-   </>}
+   <button className="secondary-btn" onClick={()=>changePage('shop')}>{t('shop')} · {storageLabel}</button>
    <details className="mining-history">
     <summary className="glass"><Clock size={20} aria-hidden="true"/><span>{t('miningHistory')}</span><ChevronRight size={18} className="history-chevron" aria-hidden="true"/></summary>
     <Card className="list-card">{miningHistory.length===0?<p className="empty">{t('noHistory')}</p>:miningHistory.map((s,i)=><div className="transaction" key={i}><span className="tx-icon positive"><Clock size={18}/></span><div className="tx-main"><strong>{t('session')}</strong><small className="muted">{date(s.started_at)}</small></div><strong className="gold-text">+{number(s.earned_fc)} FC</strong></div>)}</Card>
@@ -748,6 +726,10 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   <Card className="list-card"><Transactions/></Card>
  </details></>}
  function ShopPage(){
+  const storageLevel = data!.mainStorageLevel ?? 1;
+  const nextStorage = data!.mainStorageLevels?.[storageLevel];
+  const balance = Number(data!.user.fc), active = !!data!.mining;
+  const storageLabel = {uz:'Sig‘im',ru:'Вместимость',en:'Capacity'}[lang];
   const bundle = data!.shopBundle;
   const seconds = Math.max(0, Math.ceil(((bundle?.endsAt ?? 0) - now) / 1000));
   const available = [...(data!.equipment ?? []).filter(item => item.currency === 'RC'), ...data!.shop.map(item => ({...item, name: t(item.id as TranslationKey)}))];
@@ -757,6 +739,27 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   const offerTitle = {uz:'2 soatlik aksiya',ru:'Акция на 2 часа',en:'2-hour offer'}[lang];
   return <>
    <div className="page-heading"><span className="eyebrow"><ShoppingBag size={15}/> {t('shop')}</span><h1>{t('shopTitle')}</h1></div>
+   {data!.mainStorageLevels && <>
+    <SectionHeader title={{uz:'Asosiy mining sig‘imi',ru:'Вместимость основного майнера',en:'Main miner capacity'}[lang]}/>
+    <Card className="press-upgrades">
+     <div className="press-upgrade-head"><strong>{t('level')} {storageLevel}</strong><span className="gold-text">{number(data!.mainStorageLevels[storageLevel - 1].capacity)} FC</span></div>
+     {nextStorage && <>
+      <div className="press-next">
+       <span className="press-step"><Coins size={17} aria-hidden="true"/></span>
+       <span><strong>{t('level')} {storageLevel + 1}</strong><small>{storageLabel} · {number(nextStorage.capacity)} FC</small></span>
+       <strong className="press-price">{number(nextStorage.price)} FC</strong>
+      </div>
+      <div className="press-upgrade-action">
+       <button className="primary-btn" disabled={!!busy || active || balance < nextStorage.price}
+        onClick={()=>action('storage-upgrade', '/mining/storage-upgrade/' + (storageLevel + 1))}>
+        <Coins size={17} aria-hidden="true"/>{{uz:'Sig‘imni oshirish',ru:'Увеличить вместимость',en:'Upgrade capacity'}[lang]}
+       </button>
+       {active && <p className="muted sm">{t('error_mining_upgrade_active')}</p>}
+       {!active && balance < nextStorage.price && <p className="muted sm">{t('error_insufficient_fc')}</p>}
+      </div>
+     </>}
+    </Card>
+   </>}
    {bundle && seconds > 0 && <details className="equipment-category" open>
     <summary>{offerTitle} · {clock}</summary>
     <ul>{items.map(item => <li key={item.id}>{item.name}</li>)}</ul>
