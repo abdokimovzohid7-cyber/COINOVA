@@ -37,7 +37,7 @@ async function receiptImage(file: File) {
 }
 
 export function WalletActions({mode,lang,fc,rc,enabled,admin,payouts,request,reload}: {
- mode:'exchange'|'withdraw'; lang:Lang; fc:number; rc:number; enabled:boolean; admin:boolean; payouts:Payout[]; request:Request; reload:()=>Promise<void>;
+ mode:'exchange'|'withdraw'|'admin'; lang:Lang; fc:number; rc:number; enabled:boolean; admin:boolean; payouts:Payout[]; request:Request; reload:()=>Promise<void>;
 }) {
  const words=payoutWords[lang];
  const [units,setUnits]=useState('1');
@@ -77,7 +77,7 @@ export function WalletActions({mode,lang,fc,rc,enabled,admin,payouts,request,rel
   },true);
  }
  return <div className="wallet-actions">
-  {mode==='exchange' ? <section className="glass wallet-operation">
+  {mode==='admin' ? null : mode==='exchange' ? <section className="glass wallet-operation">
    <h2><Coins size={22} aria-hidden="true"/> {words.exchange}</h2>
    <p>{format.format(100_000)} FC = 1 RC</p>
    <form onSubmit={event=>{event.preventDefault();void run(async()=>{await request('/wallet/exchange','POST',{id:exchangeId,rc:Number(units)});setExchangeId(crypto.randomUUID());},true)}}>
@@ -121,7 +121,7 @@ export function WalletActions({mode,lang,fc,rc,enabled,admin,payouts,request,rel
      })}>{words.receipt}</button>)}
    </article>)}
   </section>}
-  {mode==='withdraw'&&admin&&enabled&&<section className="glass wallet-operation">
+  {mode==='admin'&&admin&&enabled&&<section className="glass wallet-operation">
    <h2>{words.review}</h2><button className="secondary-btn" disabled={busy} onClick={()=>run(loadReviews)}>{words.review}</button>
    {reviews?.length===0&&<p>{words.empty}</p>}
    {reviews?.map(({id,name,username,telegramId,payout})=>{
