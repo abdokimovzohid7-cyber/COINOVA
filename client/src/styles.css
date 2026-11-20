@@ -1480,3 +1480,14 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
   box-shadow: inset 0 4px 8px #0d061bb0, inset 0 -2px 4px #cf9d6280;
 }
 .mining-island-label { font-size: 12px; font-weight: 700; text-align: center; line-height: 1.15; text-shadow: 0 1px 4px #100719, 0 2px 7px #100719; }
+
+.mining-island-dialog { width: min(360px, calc(100vw - 32px)); max-height: 75dvh; padding: 0; border: 1px solid #77459d; border-radius: 19px; background: #1a1029; color: #fff1df; }
+.mining-island-dialog::backdrop { background: #08051283; }
+.mining-island-dialog-content { position: relative; padding: 22px 14px 14px; }
+.mining-island-dialog .island-dialog-close { position: absolute; z-index: 1; top: 7px; right: 7px; width: 32px; height: 32px; min-height: 0; padding: 0; }
+.mining-island-dialog .mining-panel,
+.mining-island-dialog .press-upgrades { margin: 0; padding: 12px 9px; box-shadow: none; background: transparent; border: 0; }
+.mining-island-dialog h3 { margin: 0 26px 5px; }
+.mining-island-dialog p { margin: 4px 0; }
+.mining-island-dialog .mining-buttons { margin-top: 8px; }
+.mining-island-dialog .mining-pending { font-size: 1.5rem; margin: 8px 0; }
