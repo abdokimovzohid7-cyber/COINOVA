@@ -7,7 +7,12 @@ import { PressUpgrades } from './PressUpgrades';
 type Page='home'|'mining'|'tasks'|'bonus'|'wallet'|'exchange'|'withdraw'|'profile'|'shop'|'coin'|'referrals'|'leaderboard';
 type User={id:string;profile_id:number;avatar?:string;telegram_id:string|null;username:string;first_name:string;role:string;fc:string;rc:string;xp:string;level:number;referral_count:number;streak:number;last_bonus_day:string|null;created_at:string};
 type Mission={id:string;fc:number;xp:number;type:string;kind?:'channel'|'bot';handle?:string;secret?:string};
-type Transaction={id:string;currency:string;delta:string;reason:string;created_at:string};type State={user:User;payoutEnabled?:boolean;payouts?:Payout[];miningLevel?:number;miningLevels?:{price:number;rate:number}[];transactions:Transaction[];mining:{id:string;started_at:string;last_claimed_at:string;earned_fc:string}|null;claims:{task_id:string;claim_day:string|null}[];bonuses:{claim_day:string}[];purchases:{item_id:string}[];leaders:{first_name:string;level:number;xp:string;fc:string}[];miningHistory:{started_at:string;ended_at:string|null;earned_fc:string}[];serverTime:string;tasks:Mission[];isAdmin?:boolean;managedTasks?:Mission[];telegramLinked?:boolean;telegramBot?:string;shop:{id:string;price:number}[]};
+type MiningDevice = { id: string; price: number; rate: number };
+const deviceNames: Record<string, Record<Lang, string>> = {
+ lunar_drill: {uz: 'Oy burg‘usi', ru: 'Лунный бур', en: 'Lunar drill'},
+ plasma_refinery: {uz: 'Plazma qurilmasi', ru: 'Плазменная установка', en: 'Plasma refinery'},
+};
+type Transaction={id:string;currency:string;delta:string;reason:string;created_at:string};type State={user:User;miningStorage?:number;miningDevices?:MiningDevice[];deviceMining?:Record<string,{last_claimed_at:string;earned_fc:number}|null>;payoutEnabled?:boolean;payouts?:Payout[];miningLevel?:number;miningLevels?:{price:number;rate:number}[];transactions:Transaction[];mining:{id:string;started_at:string;last_claimed_at:string;earned_fc:string}|null;claims:{task_id:string;claim_day:string|null}[];bonuses:{claim_day:string}[];purchases:{item_id:string}[];leaders:{first_name:string;level:number;xp:string;fc:string}[];miningHistory:{started_at:string;ended_at:string|null;earned_fc:string}[];serverTime:string;tasks:Mission[];isAdmin?:boolean;managedTasks?:Mission[];telegramLinked?:boolean;telegramBot?:string;shop:{id:string;price:number}[]};
 const isRender = window.location.hostname === 'coinova-web.onrender.com';
 const telegramWebApp = () => (window as Window & {Telegram?: {WebApp?: {initData?: string; ready?: () => void}}}).Telegram?.WebApp;
 function loadTelegramSdk() {
@@ -443,10 +448,14 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   const next = miningLevels[miningLevel];
   const balance = Number(user.fc);
   const elapsed = mining ? Math.max(0, now - Date.parse(mining.last_claimed_at)) : 0;
-  const pending = Math.floor(Math.min(elapsed, 3600000) / (60000 / rate));
+  const capacity = data!.miningStorage ?? rate * 60;
+  const pending = Math.min(capacity, Math.floor(elapsed / (60000 / rate)));
+  const devices = (data!.miningDevices ?? []).filter(device => data!.purchases.some(item => item.item_id === device.id));
+  const storageLabel = lang === 'uz' ? 'Sig‘im' : lang === 'ru' ? 'Вместимость' : 'Capacity';
   const unavailable = active ? t('error_mining_upgrade_active') : next && balance < next.price ? t('error_insufficient_fc') : '';
   return <>
    <div className="page-heading"><span className="eyebrow"><Pickaxe size={15}/> {t('mining')}</span><h1>{t('mineTitle')}</h1><p>{t('mineDesc')}</p></div>
+   <div className={devices.length ? "mining-device-grid" : undefined}>
    <Card className="mining-panel">
     <figure className={'press-scene' + (active ? ' press-active' : '')}>
      <img src="/cosmic-press.webp" width={768} height={512} alt={t('pressScene')}/>
@@ -463,6 +472,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
      <strong key={pending} className="mining-count">+{number(pending)}</strong> <span>FC</span>
     </h2>
     <div className="mining-stats"><div><span className="muted sm">{t('miningRate')}</span><strong>{rate} {t('perMinute')}</strong></div><div><span className="muted sm">{t('collected')}</span><strong>{number(mining?.earned_fc||'0')} FC</strong></div></div>
+    <p className="muted sm">{storageLabel} · {number(capacity)} FC</p>
     <div className="mining-buttons">{!active
      ? <button className="primary-btn" disabled={!!busy} onClick={()=>action('start','/mining/start')}><Play size={18}/>{t('mineStart')}</button>
      : <>
@@ -475,6 +485,23 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
      </>}
     </div>
    </Card>
+   {devices.map(device => {
+    const session = data!.deviceMining?.[device.id];
+    const limit = device.rate * (60 + (miningLevel - 1) * 15);
+    const amount = session ? Math.min(limit, Math.floor(Math.max(0, now - Date.parse(session.last_claimed_at)) * device.rate / 60000)) : 0;
+    const operate = (operation: string) => action(device.id, '/mining/' + device.id + '/' + operation);
+    return <Card className="mining-panel mining-aux" key={device.id}>
+     <div className="shop-art">{device.id === 'lunar_drill' ? <Pickaxe size={42}/> : <Zap size={42}/>}</div>
+     <h3>{deviceNames[device.id][lang]}</h3>
+     <p className="muted sm">{device.rate} {t('perMinute')} · {storageLabel} {number(limit)} FC</p>
+     <strong className="gold-text">+{number(amount)} FC</strong>
+     <div className="mining-buttons">{session ? <>
+      <button className="primary-btn" disabled={!!busy || amount < 1} onClick={()=>operate('claim')}>{t('claim')}</button>
+      <button className="secondary-btn" disabled={!!busy} onClick={()=>operate('stop')}>{t('mineStop')}</button>
+     </> : <button className="primary-btn" disabled={!!busy} onClick={()=>operate('start')}>{t('mineStart')}</button>}</div>
+    </Card>;
+   })}
+   </div>
    {miningLevels.length > 0 && <>
     <SectionHeader title={t('mining_upgrade')}/>
     <Card className="press-upgrades">
@@ -627,7 +654,13 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   <summary className="glass"><ListChecks size={20} aria-hidden="true"/><span>{t('transactions')}</span><ChevronRight size={18} className="history-chevron" aria-hidden="true"/></summary>
   <Card className="list-card"><Transactions/></Card>
  </details></>}
- function ShopPage(){return <><div className="page-heading"><span className="eyebrow"><ShoppingBag size={15}/> {t('shop')}</span><h1>{t('shopTitle')}</h1><p>{t('shopDesc')}</p></div><div className="shop-grid">{data!.shop.map((item,i)=>{const owned=data!.purchases.some(p=>p.item_id===item.id);return <Card className="shop-item" key={item.id}><div className={'shop-art shop-art-'+i}>{i===0?<UserRound size={56}/>:i===1?<Orbit size={60}/>:<Sparkles size={60}/>}</div><h3>{t(item.id as TranslationKey)}</h3><p className="gold-text"><Coins size={16}/> {item.price} RC</p><button className={owned?'claimed-btn':'secondary-btn'} disabled={owned||!!busy||Number(data!.user.rc)<item.price} onClick={()=>action(item.id,`/shop/${item.id}/buy`)}>{owned?t('owned'):Number(data!.user.rc)<item.price?t('notEnough'):t('buy')}</button></Card>})}</div></>}
+ function ShopPage(){return <><div className="page-heading"><span className="eyebrow"><ShoppingBag size={15}/> {t('shop')}</span><h1>{t('shopTitle')}</h1><p>{t('shopDesc')}</p></div><SectionHeader title={lang === 'uz' ? 'FC mining qurilmalari' : lang === 'ru' ? 'Устройства за FC' : 'FC mining devices'}/><div className="shop-grid">{(data!.miningDevices ?? []).map(device => {
+  const owned = data!.purchases.some(purchase => purchase.item_id === device.id);
+  const affordable = Number(data!.user.fc) >= device.price;
+  return <Card className="shop-item" key={device.id}><div className="shop-art">{device.id === 'lunar_drill' ? <Pickaxe size={48}/> : <Zap size={48}/>}</div>
+   <h3>{deviceNames[device.id][lang]}</h3><p>{device.rate} {t('perMinute')}</p><p className="gold-text">{number(device.price)} FC</p>
+   <button className="secondary-btn" disabled={owned || !affordable || !!busy} onClick={()=>action(device.id, '/shop/' + device.id + '/buy')}>{owned ? t('owned') : affordable ? t('buy') : t('notEnough')}</button></Card>;
+ })}</div><SectionHeader title="RC"/><div className="shop-grid">{data!.shop.map((item,i)=>{const owned=data!.purchases.some(p=>p.item_id===item.id);return <Card className="shop-item" key={item.id}><div className={'shop-art shop-art-'+i}>{i===0?<UserRound size={56}/>:i===1?<Orbit size={60}/>:<Sparkles size={60}/>}</div><h3>{t(item.id as TranslationKey)}</h3><p className="gold-text"><Coins size={16}/> {item.price} RC</p><button className={owned?'claimed-btn':'secondary-btn'} disabled={owned||!!busy||Number(data!.user.rc)<item.price} onClick={()=>action(item.id,`/shop/${item.id}/buy`)}>{owned?t('owned'):Number(data!.user.rc)<item.price?t('notEnough'):t('buy')}</button></Card>})}</div></>}
  function ProfilePage(){return <section className="explorer-profile"><div className="page-heading"><span className="eyebrow"><UserRound size={15}/> {t('profile')}</span><h1>{t('profileTitle')}</h1></div><Card className="profile-card"><div className="avatar profile-avatar">
  <span className="profile-avatar-face">{avatarContent(data!.user)}</span>
  <input ref={avatarInput} type="file" accept="image/*" hidden onChange={event=>{
