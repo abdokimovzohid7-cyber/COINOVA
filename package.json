@@ -1,23 +1,22 @@
 {
   "name": "coinova",
-  "version": "1.0.0",
   "private": true,
-  "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --host 0.0.0.0"
-  },
-  "dependencies": {
-    "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "typescript": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "lucide-react": "latest"
+    "dev": "node scripts/preview.mjs",
+    "build": "npm run build -w client && npm run build -w server",
+    "start": "npm run start -w server",
+    "check": "npm run check -w client && npm run check -w server",
+    "build:site": "npm run build -w client && node scripts/build-site.mjs"
   },
   "devDependencies": {
-    "@types/react": "latest",
-    "@types/react-dom": "latest"
+    "concurrently": "^9.1.2",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

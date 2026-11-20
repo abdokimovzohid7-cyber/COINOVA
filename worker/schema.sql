@@ -1,5 +1,0 @@
-PRAGMA foreign_keys = ON;
-CREATE TABLE IF NOT EXISTS users(telegram_id TEXT PRIMARY KEY,username TEXT,first_name TEXT,language TEXT DEFAULT 'uz',free_coin INTEGER NOT NULL DEFAULT 0,ruzo_coin INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE IF NOT EXISTS transactions(id INTEGER PRIMARY KEY AUTOINCREMENT,telegram_id TEXT NOT NULL,coin_type TEXT NOT NULL CHECK(coin_type IN('free','ruzo')),amount INTEGER NOT NULL,reason TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,FOREIGN KEY(telegram_id) REFERENCES users(telegram_id));
-CREATE TABLE IF NOT EXISTS daily_claims(telegram_id TEXT NOT NULL,claim_date TEXT NOT NULL,amount INTEGER NOT NULL,PRIMARY KEY(telegram_id,claim_date),FOREIGN KEY(telegram_id) REFERENCES users(telegram_id));
-CREATE TABLE IF NOT EXISTS referrals(inviter_id TEXT NOT NULL,invited_id TEXT NOT NULL UNIQUE,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(inviter_id,invited_id),FOREIGN KEY(inviter_id) REFERENCES users(telegram_id),FOREIGN KEY(invited_id) REFERENCES users(telegram_id));
