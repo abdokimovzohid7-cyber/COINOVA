@@ -19,7 +19,7 @@ function EquipmentArt({item}: {item: Equipment}) {
   backgroundPosition: `${(item.art % 5) * 25}% ${Math.floor(item.art / 5) * 12.5}%`,
  }}/>;
 }
-type Transaction={id:string;currency:string;delta:string;reason:string;created_at:string};type State={user:User;equipment?:Equipment[];miningConfig?:Record<string,MiningConfig>;deviceMining?:Record<string,({last_claimed_at:string;earned_fc:number}&Partial<MiningConfig>)|null>;payoutEnabled?:boolean;payouts?:Payout[];miningLevel?:number;miningLevels?:{price:number;rate:number}[];transactions:Transaction[];mining:{id:string;started_at:string;last_claimed_at:string;earned_fc:string;rate?:number;capacity?:number}|null;claims:{task_id:string;claim_day:string|null}[];bonuses:{claim_day:string}[];purchases:{item_id:string}[];leaders:{avatar?:string|null;first_name:string;level:number;xp:string;fc:string}[];miningHistory:{started_at:string;ended_at:string|null;earned_fc:string}[];serverTime:string;tasks:Mission[];isAdmin?:boolean;managedTasks?:Mission[];telegramLinked?:boolean;telegramBot?:string;shop:{id:string;price:number}[];shopBundle?:{id:string;itemIds:string[];price:number;endsAt:number}|null};
+type Transaction={id:string;currency:string;delta:string;reason:string;created_at:string};type State={user:User;equipment?:Equipment[];miningConfig?:Record<string,MiningConfig>;deviceLevels?:Record<string,number>;deviceUpgradePrices?:number[];deviceMining?:Record<string,({last_claimed_at:string;earned_fc:number}&Partial<MiningConfig>)|null>;payoutEnabled?:boolean;payouts?:Payout[];miningLevel?:number;miningLevels?:{price:number;rate:number}[];transactions:Transaction[];mining:{id:string;started_at:string;last_claimed_at:string;earned_fc:string;rate?:number;capacity?:number}|null;claims:{task_id:string;claim_day:string|null}[];bonuses:{claim_day:string}[];purchases:{item_id:string}[];leaders:{avatar?:string|null;first_name:string;level:number;xp:string;fc:string}[];miningHistory:{started_at:string;ended_at:string|null;earned_fc:string}[];serverTime:string;tasks:Mission[];isAdmin?:boolean;managedTasks?:Mission[];telegramLinked?:boolean;telegramBot?:string;shop:{id:string;price:number}[];shopBundle?:{id:string;itemIds:string[];price:number;endsAt:number}|null};
 const isRender = window.location.hostname === 'coinova-web.onrender.com';
 const telegramWebApp = () => (window as Window & {Telegram?: {WebApp?: {initData?: string; ready?: () => void}}}).Telegram?.WebApp;
 function loadTelegramSdk() {
@@ -536,6 +536,21 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
     </div>
    </Card>
    {devices.map(device => {
+    const deviceLevel = data!.deviceLevels?.[device.id] ?? 1;
+    const upgradePrice = data!.deviceUpgradePrices?.[deviceLevel];
+    const upgradesBlocked = active || Object.values(data!.deviceMining ?? {}).some(Boolean);
+    const modules = [
+     [Zap, 'Quvvat yadrosi', 'Энергоядро', 'Power core'],
+     [ShieldCheck, 'Himoya qoplamasi', 'Защитный корпус', 'Armor plating'],
+     [Orbit, 'Orbital halqa', 'Орбитальное кольцо', 'Orbital ring'],
+     [Gem, 'Kristall modul', 'Кристальный модуль', 'Crystal module'],
+     [Flame, 'Plazma dvigateli', 'Плазменный двигатель', 'Plasma engine'],
+     [Rocket, 'Turbo modul', 'Турбомодуль', 'Turbo module'],
+     [Sparkles, 'Kvant modul', 'Квантовый модуль', 'Quantum module'],
+     [Star, 'Nova reaktori', 'Реактор Нова', 'Nova reactor'],
+     [Crown, 'Galaktik yadro', 'Галактическое ядро', 'Galactic core'],
+    ] as const;
+    const moduleLanguage = lang === 'uz' ? 1 : lang === 'ru' ? 2 : 3;
     const session = data!.deviceMining?.[device.id];
     const config = data!.miningConfig?.[device.id];
     const deviceRate = session?.rate ?? config?.rate ?? device.value;
@@ -543,14 +558,33 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
     const amount = session ? Math.min(limit, Math.floor(Math.max(0, now - Date.parse(session.last_claimed_at)) * deviceRate / 60000)) : 0;
     const operate = (operation: string) => action(device.id, '/mining/' + device.id + '/' + operation);
     return <Card className="mining-panel mining-aux" key={device.id}>
-     <EquipmentArt item={device}/>
+     <div className="device-upgrade-art" data-level={deviceLevel}>
+      <EquipmentArt item={device}/>
+      <span className="device-level-badge">{t('level')} {deviceLevel}</span>
+      {deviceLevel > 1 && <div className="device-module-icons">
+       {modules.slice(0, deviceLevel - 1).map(module => {
+        const Icon = module[0];
+        return <span key={module[1]} title={module[moduleLanguage]}><Icon size={15} aria-hidden="true"/></span>;
+       })}
+      </div>}
+     </div>
      <h3>{device.name}</h3>
+     {deviceLevel > 1 && <p className="gold-text sm">{modules[deviceLevel - 2]?.[moduleLanguage]}</p>}
      <p className="muted sm">{number(deviceRate)} {t('perMinute')} · {storageLabel} {number(limit)} FC</p>
      <strong className="gold-text">+{number(amount)} FC</strong>
      <div className="mining-buttons">{session ? <>
       <button className="primary-btn" disabled={!!busy || amount < 1} onClick={()=>operate('claim')}>{t('claim')}</button>
       <button className="secondary-btn" disabled={!!busy} onClick={()=>operate('stop')}>{t('mineStop')}</button>
      </> : <button className="primary-btn" disabled={!!busy} onClick={()=>operate('start')}>{t('mineStart')}</button>}</div>
+     {upgradePrice !== undefined && <div className="device-upgrade-action">
+      <p className="muted sm">{t('level')} {deviceLevel + 1} · {modules[deviceLevel - 1]?.[moduleLanguage]}</p>
+      <button className="secondary-btn" disabled={!!busy || upgradesBlocked || Number(user.rc) < upgradePrice}
+       onClick={()=>action('device-upgrade', '/mining/device-upgrade/' + device.id + '/' + (deviceLevel + 1))}>
+       <Zap size={15} aria-hidden="true"/>{number(upgradePrice)} RC
+      </button>
+      {upgradesBlocked && <p className="muted sm">{t('error_mining_upgrade_active')}</p>}
+     </div>}
+     {deviceLevel === 10 && <p className="gold-text sm"><Trophy size={15}/> {t('level')} 10</p>}
     </Card>;
    })}
    </div>
