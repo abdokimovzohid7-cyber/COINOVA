@@ -4,7 +4,7 @@ import{Home,Pickaxe,ListChecks,Gift,Wallet,UserRound,ShoppingBag,Coins,Users,Tro
 import{dictionary,type Lang,type TranslationKey}from'./i18n';import './styles.css';
 import { PressAnimation } from './PressAnimation';
 import { PressUpgrades } from './PressUpgrades';
-type Page='home'|'mining'|'tasks'|'bonus'|'wallet'|'exchange'|'withdraw'|'profile'|'shop'|'coin'|'referrals'|'leaderboard';
+type Page='home'|'mining'|'tasks'|'bonus'|'wallet'|'exchange'|'withdraw'|'profile'|'shop'|'coin'|'referrals'|'leaderboard'|'admin';
 type User={id:string;profile_id:number;avatar?:string;telegram_id:string|null;username:string;first_name:string;role:string;fc:string;rc:string;xp:string;level:number;referral_count:number;streak:number;last_bonus_day:string|null;created_at:string};
 type Mission={id:string;fc:number;xp:number;type:string;kind?:'channel'|'bot';handle?:string;secret?:string};
 type Equipment = { id: string; name: string; kind: 'miner'|'boost'|'storage'; currency: 'FC'|'RC'; price: number; value: number; art: number };
@@ -662,27 +662,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
      : <p className="muted">{t('error_telegram_unavailable')}</p>}
     </div>
    </details>
-   {data!.isAdmin && <Card className="telegram-settings">
-    <h3>{t('adminMissions')}</h3>
-    <form onSubmit={e=>{
-     e.preventDefault();
-     const values=new FormData(e.currentTarget);
-     void action('admin-mission','/admin/task',{kind:values.get('kind'),handle:values.get('handle'),fc:Number(values.get('fc'))});
-    }}>
-     <label>{t('missionKind')}<select name="kind"><option value="channel">{t('telegramChannel')}</option><option value="bot">{t('telegramBotTask')}</option></select></label>
-     <label>{t('telegramHandle')}<input name="handle" required maxLength={33} placeholder="@coinova"/></label>
-     <label>{t('missionReward')}<input name="fc" required type="number" min={1} max={100000}/></label>
-     <button className="primary-btn" disabled={!!busy}><Check size={17}/>{t('saveMission')}</button>
-    </form>
-    {data!.managedTasks?.map(task=><div className="managed-mission" key={task.id}>
-     <strong>@{task.handle} · {number(task.fc)} FC</strong>
-     {task.secret && <details><summary>{t('integrationInfo')}</summary>
-      <p><code>POST /api/telegram/bot-proof/{task.id}</code></p>
-      <p><code>Authorization: Bearer {task.secret}</code></p>
-      <p><code>{'{"telegramId":"<Telegram user ID>"}'}</code></p>
-     </details>}
-    </div>)}
-   </Card>}
+   
   </>;
  }
  function BonusPage(){
@@ -763,26 +743,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
      {ownsItem ? {uz:'To‘plamdagi buyumlardan biri sizda bor',ru:'Один из предметов уже куплен',en:'You already own a bundle item'}[lang] : Number(data!.user.rc) < bundle.price ? t('notEnough') : t('buy')}
     </button>
    </details>}
-   {data!.isAdmin && <details className="equipment-category">
-    <summary>{{uz:'Aksiya to‘plamini yaratish',ru:'Создать акционный набор',en:'Create a bundle offer'}[lang]}</summary>
-    <form onSubmit={event=>{
-     event.preventDefault();
-     const form = new FormData(event.currentTarget);
-     const itemIds = form.getAll('items').map(String);
-     const price = Number(form.get('price'));
-     const total = available.filter(item => itemIds.includes(item.id)).reduce((sum, item) => sum + item.price, 0);
-     if (itemIds.length < 2 || itemIds.length > 5 || !Number.isSafeInteger(price) || price < 50 || price >= total) {
-      setError('invalid_bundle');
-      return;
-     }
-     void action('admin-bundle', '/admin/shop-bundle', {itemIds, price});
-    }}>
-     <p>{{uz:'2–5 ta RC buyumini tanlang. Yangi aksiya joriy aksiyani almashtiradi.',ru:'Выберите 2–5 товаров за RC. Новый набор заменит текущий.',en:'Choose 2–5 RC items. A new offer replaces the current one.'}[lang]}</p>
-     {available.map(item => <div key={item.id}><label><input type="checkbox" name="items" value={item.id}/> {item.name} · {item.price} RC</label></div>)}
-     <p><label>{{uz:'To‘plam narxi (RC)',ru:'Цена набора (RC)',en:'Bundle price (RC)'}[lang]} <input type="number" name="price" required min={50} step={1}/></label></p>
-     <button type="submit" className="secondary-btn" disabled={!!busy}>{offerTitle}</button>
-    </form>
-   </details>}
+   
    {(['FC','RC'] as const).map(currency => <section key={currency}>
     {(['miner','boost','storage'] as const).map(kind => <details className="equipment-category" key={kind} open={currency === 'FC' && kind === 'miner'}>
      <summary>{equipmentLabels[lang][kind]} · {currency}</summary>
@@ -805,6 +766,58 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
    <div className="shop-grid">{data!.shop.map(item=>{const owned=data!.purchases.some(p=>p.item_id===item.id);return <Card className="shop-item" key={item.id}><div className="shop-cosmetic-art" data-cosmetic={item.id} aria-hidden="true"/><h3>{t(item.id as TranslationKey)}</h3><p className="gold-text"><Coins size={16}/> {item.price} RC</p><button className={owned?'claimed-btn':'secondary-btn'} disabled={owned||!!busy||Number(data!.user.rc)<item.price} onClick={()=>action(item.id,`/shop/${item.id}/buy`)}>{owned?t('owned'):Number(data!.user.rc)<item.price?t('notEnough'):t('buy')}</button></Card>})}</div>
   </>;
  }
+ const adminTitle = {uz:'Admin paneli',ru:'Панель администратора',en:'Admin panel'}[lang];
+ function AdminPage(){
+  if (!data!.isAdmin) return <ProfilePage/>;
+  const available = [...(data!.equipment ?? []).filter(item => item.currency === 'RC'), ...data!.shop.map(item => ({...item, name: t(item.id as TranslationKey)}))];
+  const offerTitle = {uz:'2 soatlik aksiyani boshlash',ru:'Запустить акцию на 2 часа',en:'Launch 2-hour offer'}[lang];
+  return <>
+   <div className="page-heading"><span className="eyebrow"><ShieldCheck size={16}/> {t('profile')}</span><h1>{adminTitle}</h1><p>{data!.user.first_name} · ID {data!.user.profile_id}</p></div>
+   {data!.isAdmin && <Card className="telegram-settings">
+    <h3>{t('adminMissions')}</h3>
+    <form onSubmit={e=>{
+     e.preventDefault();
+     const values=new FormData(e.currentTarget);
+     void action('admin-mission','/admin/task',{kind:values.get('kind'),handle:values.get('handle'),fc:Number(values.get('fc'))});
+    }}>
+     <label>{t('missionKind')}<select name="kind"><option value="channel">{t('telegramChannel')}</option><option value="bot">{t('telegramBotTask')}</option></select></label>
+     <label>{t('telegramHandle')}<input name="handle" required maxLength={33} placeholder="@coinova"/></label>
+     <label>{t('missionReward')}<input name="fc" required type="number" min={1} max={100000}/></label>
+     <button className="primary-btn" disabled={!!busy}><Check size={17}/>{t('saveMission')}</button>
+    </form>
+    {data!.managedTasks?.map(task=><div className="managed-mission" key={task.id}>
+     <strong>@{task.handle} · {number(task.fc)} FC</strong>
+     {task.secret && <details><summary>{t('integrationInfo')}</summary>
+      <p><code>POST /api/telegram/bot-proof/{task.id}</code></p>
+      <p><code>Authorization: Bearer {task.secret}</code></p>
+      <p><code>{'{"telegramId":"<Telegram user ID>"}'}</code></p>
+     </details>}
+    </div>)}
+   </Card>}
+   {data!.isAdmin && <details className="equipment-category">
+    <summary>{{uz:'Aksiya to‘plamini yaratish',ru:'Создать акционный набор',en:'Create a bundle offer'}[lang]}</summary>
+    <form onSubmit={event=>{
+     event.preventDefault();
+     const form = new FormData(event.currentTarget);
+     const itemIds = form.getAll('items').map(String);
+     const price = Number(form.get('price'));
+     const total = available.filter(item => itemIds.includes(item.id)).reduce((sum, item) => sum + item.price, 0);
+     if (itemIds.length < 2 || itemIds.length > 5 || !Number.isSafeInteger(price) || price < 50 || price >= total) {
+      setError('invalid_bundle');
+      return;
+     }
+     void action('admin-bundle', '/admin/shop-bundle', {itemIds, price});
+    }}>
+     <p>{{uz:'2–5 ta RC buyumini tanlang. Yangi aksiya joriy aksiyani almashtiradi.',ru:'Выберите 2–5 товаров за RC. Новый набор заменит текущий.',en:'Choose 2–5 RC items. A new offer replaces the current one.'}[lang]}</p>
+     {available.map(item => <div key={item.id}><label><input type="checkbox" name="items" value={item.id}/> {item.name} · {item.price} RC</label></div>)}
+     <p><label>{{uz:'To‘plam narxi (RC)',ru:'Цена набора (RC)',en:'Bundle price (RC)'}[lang]} <input type="number" name="price" required min={50} step={1}/></label></p>
+     <button type="submit" className="secondary-btn" disabled={!!busy}>{offerTitle}</button>
+    </form>
+   </details>}
+   {data!.payoutEnabled ? <WalletActions mode="admin" lang={lang} fc={0} rc={0} enabled admin payouts={[]} request={request} reload={reload}/>
+    : <Card className="telegram-settings"><h3>{payoutWords[lang].review}</h3><p>{payoutWords[lang].disabled}</p></Card>}
+  </>;
+ }
  function ProfilePage(){return <section className="explorer-profile"><div className="page-heading"><span className="eyebrow"><UserRound size={15}/> {t('profile')}</span><h1>{t('profileTitle')}</h1></div><Card className="profile-card"><div className="avatar profile-avatar">
  <span className="profile-avatar-face">{avatarContent(data!.user)}</span>
  <input ref={avatarInput} type="file" accept="image/*" hidden onChange={event=>{
@@ -813,7 +826,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   if (file && !avatarUploading) void uploadAvatar(file);
  }}/>
  <button type="button" className="profile-camera" aria-label={avatarLabel} title={avatarLabel} disabled={avatarUploading} onClick={()=>avatarInput.current?.click()}><Camera size={17}/></button>
- </div>{avatarFailed && <p className="profile-avatar-error" role="alert">{avatarError}</p>}<h2>{data!.user.first_name}</h2><span className="tag gold">{t('level')} {data!.user.level}</span><span className="muted tiny user-id">ID: {data!.user.profile_id}</span></Card>{renderXP(true)}<SectionHeader title={t('stats')}/><div className="stat-grid"><Card><Trophy className="purple-text"/><strong>{number(data!.user.xp)}</strong><span className="muted sm">XP</span></Card><Card><Users className="purple-text"/><strong>{data!.user.referral_count}</strong><span className="muted sm">{t('totalReferrals')}</span></Card><Card><Clock className="purple-text"/><strong>{date(data!.user.created_at)}</strong><span className="muted sm">{t('memberSince')}</span></Card></div><SectionHeader title={t('settings')}/><Card className="settings-card">{renderTelegramSettings()}<button onClick={()=>changePage('referrals')}><Users size={19}/>{t('referrals')}<ChevronRight size={17}/></button><button onClick={()=>changePage('leaderboard')}><Trophy size={19}/>{t('leaderboard')}<ChevronRight size={17}/></button><button onClick={()=>changePage('coin')}><Coins size={19}/>{t('coin')}<ChevronRight size={17}/></button><a className="settings-link" href={authPath('signout')} target="_top"><LogOut size={19}/>{t('logout')}<ChevronRight size={17}/></a></Card></section>}
+ </div>{avatarFailed && <p className="profile-avatar-error" role="alert">{avatarError}</p>}<h2>{data!.user.first_name}</h2><span className="tag gold">{t('level')} {data!.user.level}</span><span className="muted tiny user-id">ID: {data!.user.profile_id}</span></Card>{renderXP(true)}<SectionHeader title={t('stats')}/><div className="stat-grid"><Card><Trophy className="purple-text"/><strong>{number(data!.user.xp)}</strong><span className="muted sm">XP</span></Card><Card><Users className="purple-text"/><strong>{data!.user.referral_count}</strong><span className="muted sm">{t('totalReferrals')}</span></Card><Card><Clock className="purple-text"/><strong>{date(data!.user.created_at)}</strong><span className="muted sm">{t('memberSince')}</span></Card></div><SectionHeader title={t('settings')}/><Card className="settings-card">{data!.isAdmin && <button onClick={()=>changePage('admin')}><ShieldCheck size={19}/>{adminTitle}<ChevronRight size={17}/></button>}{renderTelegramSettings()}<button onClick={()=>changePage('referrals')}><Users size={19}/>{t('referrals')}<ChevronRight size={17}/></button><button onClick={()=>changePage('leaderboard')}><Trophy size={19}/>{t('leaderboard')}<ChevronRight size={17}/></button><button onClick={()=>changePage('coin')}><Coins size={19}/>{t('coin')}<ChevronRight size={17}/></button><a className="settings-link" href={authPath('signout')} target="_top"><LogOut size={19}/>{t('logout')}<ChevronRight size={17}/></a></Card></section>}
  function ReferralPage(){
   const {id,referral_count:count}=data!.user;
   const link = isRender
@@ -852,7 +865,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
  }
  function CoinPage(){return <><div className="page-heading"><span className="eyebrow"><Coins size={15}/> COIN CENTER</span><h1>{t('coinTitle')}</h1><p>{t('coinDesc')}</p></div><div className="balance-grid">{renderBalance('fc')}{renderBalance('rc')}</div><Card className="coin-rules"><ShieldCheck size={27} className="purple-text"/><p>{t('coinRules')}</p><button className="secondary-btn" onClick={()=>changePage('wallet')}><Wallet size={17}/>{t('wallet')}</button></Card><SectionHeader title={t('transactions')}/><Card className="list-card"><Transactions/></Card></>}
  const activePage=page==='exchange'||page==='withdraw'?'wallet':page;
- const pages:Record<Page,()=>React.ReactNode>={home:HomePage,mining:MiningPage,tasks:TasksPage,bonus:BonusPage,wallet:WalletPage,exchange:()=>WalletSection('exchange'),withdraw:()=>WalletSection('withdraw'),profile:ProfilePage,shop:ShopPage,coin:CoinPage,referrals:ReferralPage,leaderboard:Leaderboard};
+ const pages:Record<Page,()=>React.ReactNode>={home:HomePage,mining:MiningPage,tasks:TasksPage,bonus:BonusPage,wallet:WalletPage,exchange:()=>WalletSection('exchange'),withdraw:()=>WalletSection('withdraw'),profile:ProfilePage,shop:ShopPage,coin:CoinPage,referrals:ReferralPage,leaderboard:Leaderboard,admin:AdminPage};
  if (isRender && !data) return <main className="telegram-welcome">
   <div className="telegram-welcome-art" aria-hidden="true"/>
   <div className="telegram-welcome-language"><LanguagePicker lang={lang} label={t('language')} open={languageOpen}
