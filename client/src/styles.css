@@ -1463,17 +1463,25 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
   height: 12px;
   background: radial-gradient(ellipse at 50% 0%, #170c2600 28%, #362050b8 69%, transparent 75%);
 }
-.mining-island-platform .equipment-art,
+.mining-island-slot:not(:disabled) .mining-island-platform::before,
+.mining-island-slot:not(:disabled) .mining-island-platform::after {
+  display: none;
+}
+.mining-island-platform .equipment-art {
+  width: 104px;
+  height: 104px;
+  margin: 0;
+  background-color: transparent;
+  mask-image: radial-gradient(ellipse 65% 64% at 50% 49%, #000 63%, transparent 83%);
+}
 .mining-island-platform img {
-  width: 110px;
-  height: 89px;
-  min-height: 0;
-  margin-bottom: 4px;
-  object-fit: cover;
-  mask-image: radial-gradient(ellipse 59% 55% at 50% 49%, black 56%, transparent 97%);
+  width: 148px;
+  height: 104px;
+  margin: 0;
+  object-fit: contain;
+  mask-image: radial-gradient(ellipse 65% 64% at 50% 49%, #000 63%, transparent 83%);
 }
 .mining-island-slot[data-kind="press"] .mining-island-platform { width: 164px; }
-.mining-island-slot[data-kind="press"] img { width: 143px; height: 99px; }
 .mining-island-slot:disabled { cursor: default; color: #e4c9f0; opacity: .9; }
 .mining-island-slot:disabled svg { margin-bottom: 11px; color: #d6a3ed; }
 .mining-island-slot[aria-pressed="true"] .mining-island-platform::before {
