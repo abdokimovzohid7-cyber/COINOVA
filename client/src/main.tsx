@@ -457,11 +457,13 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
     <ol className="ranking-podium" aria-label={title}>
      {[1,2,3].map(place => {
       const leader = leaders[place - 1];
-      return <li key={place} data-place={place} className="ranking-podium-slot">
-       <span className="ranking-place">#{place}</span>
-       <strong title={leader?.first_name}>{leader?.first_name ?? vacant}</strong>
-       {leader && <span>{t('level')} {leader.level}</span>}
-       {leader && <b>{number(leader.xp)} XP</b>}
+      const initial = leader?.first_name.normalize().match(/[\p{L}\p{N}]/u)?.[0]?.toUpperCase();
+      return <li key={place} data-place={place} className="ranking-podium-slot" aria-label={'#' + place + ' · ' + (leader?.first_name ?? vacant)}>
+       <span className="podium-avatar" aria-hidden="true">{initial || <UserRound size={16}/>}</span>
+       <div className="podium-result">
+        <strong title={leader?.first_name}>{leader?.first_name ?? vacant}</strong>
+        {leader && <><b>{number(leader.xp)} XP</b><span>{t('level')} {leader.level}</span></>}
+       </div>
       </li>;
      })}
     </ol>
