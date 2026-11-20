@@ -1232,3 +1232,20 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 .telegram-welcome-content p { margin: 8px 0 0; }
 .telegram-welcome .telegram-welcome-action { width: 100%; min-height: 54px; margin-top: 24px; border-radius: 999px; justify-content: center; text-decoration: none; background: linear-gradient(105deg,#6032eb,#9836e8,#bb4ce9); }
 .telegram-welcome-content .telegram-welcome-note { margin-top: 12px; color: #bdb1d0; font-size: .86rem; }
+
+/* Keep mobile page transitions to a single short opacity change. */
+@media (max-width: 700px) {
+  .content-inner, .content-inner :not(.press-animation, .press-animation *),
+  .content-inner :not(.press-animation, .press-animation *)::before,
+  .content-inner :not(.press-animation, .press-animation *)::after {
+    animation: none !important;
+    backdrop-filter: none;
+  }
+  .content-inner .hero-typewriter-line { display: none; }
+  .content-inner .hero-typewriter-space { visibility: visible; }
+  .content-inner .glass { transition-property: color, background-color, border-color; }
+}
+@media (max-width: 700px) and (prefers-reduced-motion: no-preference) {
+  .content-inner { animation: mobile-page-fade 140ms ease-out both !important; }
+}
+@keyframes mobile-page-fade { from { opacity: .85; } }
