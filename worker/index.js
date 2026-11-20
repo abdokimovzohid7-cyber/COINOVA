@@ -544,6 +544,29 @@ async function api(request, env, url) {
     const admin = await db.prepare('SELECT id FROM accounts WHERE subject = ?').bind(adminSubject).first();
     env = { ...env, COINOVA_ADMIN_ID: admin?.id };
   }
+  if (path === '/admin/balance' && request.method === 'POST') {
+    const operator = await db.prepare('SELECT id FROM accounts WHERE subject = ?').bind(subject).first();
+    if (!operator || operator.id !== env.COINOVA_ADMIN_ID) fail('forbidden', 403);
+    const { profileId, currency, delta } = (await input(request)) ?? {};
+    if (!/^[1-9][0-9]{7}$/.test(String(profileId)) || !['FC', 'RC'].includes(currency) ||
+        !Number.isSafeInteger(delta) || delta === 0) fail('invalid_balance_adjustment', 400);
+    const target = await db.prepare('SELECT account_id FROM profile_ids WHERE profile_id = ?').bind(Number(profileId)).first();
+    if (!target) fail('not_found', 404);
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const row = await db.prepare('SELECT version, state FROM accounts WHERE id = ?').bind(target.account_id).first();
+      if (!row) fail('not_found', 404);
+      const state = JSON.parse(row.state);
+      if (!Number.isSafeInteger(state.user[currency.toLowerCase()] + delta)) fail('invalid_balance_adjustment', 400);
+      const referrals = currency === 'FC' && delta < 0
+        ? await db.prepare('SELECT COUNT(*) AS count FROM accounts WHERE referred_by = ?').bind(target.account_id).first()
+        : null;
+      record(state, currency, delta, 'admin_balance', new Date().toISOString(), 50 * (referrals?.count ?? 0));
+      const result = await db.prepare('UPDATE accounts SET state = ?, version = version + 1 WHERE id = ? AND version = ?')
+        .bind(JSON.stringify(state), target.account_id, row.version).run();
+      if (result.meta.changes === 1) return json({ ok: true });
+    }
+    fail('try_again', 409);
+  }
   const adminPayout = path.match(/^\/admin\/payouts(?:\/([0-9a-f-]{36})\/([0-9a-f-]{36})\/(card|approve|reject|receipt))?$/);
   if (adminPayout) return payoutAdmin(request, db, env, subject, request.method, ...adminPayout.slice(1));
   const receiptId = path.match(/^\/wallet\/receipt\/([0-9a-f-]{36})$/)?.[1];
