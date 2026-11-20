@@ -9,16 +9,18 @@ type User={id:string;profile_id:number;avatar?:string;telegram_id:string|null;us
 type Mission={id:string;fc:number;xp:number;type:string;kind?:'channel'|'bot';handle?:string;secret?:string};
 type Transaction={id:string;currency:string;delta:string;reason:string;created_at:string};type State={user:User;payoutEnabled?:boolean;payouts?:Payout[];miningLevel?:number;miningLevels?:{price:number;rate:number}[];transactions:Transaction[];mining:{id:string;started_at:string;last_claimed_at:string;earned_fc:string}|null;claims:{task_id:string;claim_day:string|null}[];bonuses:{claim_day:string}[];purchases:{item_id:string}[];leaders:{first_name:string;level:number;xp:string;fc:string}[];miningHistory:{started_at:string;ended_at:string|null;earned_fc:string}[];serverTime:string;tasks:Mission[];isAdmin?:boolean;managedTasks?:Mission[];telegramLinked?:boolean;telegramBot?:string;shop:{id:string;price:number}[]};
 const isRender = window.location.hostname === 'coinova-web.onrender.com';
+const telegramWebApp = () => (window as Window & {Telegram?: {WebApp?: {initData?: string; ready?: () => void}}}).Telegram?.WebApp;
 const telegramLoginCopy = {
- uz: ['Telegram orqali davom etish', 'Telegram orqali hisobga kirish hozircha ulanmoqda.'],
- ru: ['Продолжить через Telegram', 'Вход через Telegram пока настраивается.'],
- en: ['Continue with Telegram', 'Telegram sign-in is still being set up.'],
+ uz: ['Telegram orqali davom etish', 'Ilovani COINOVA botidagi menyudan oching.'],
+ ru: ['Продолжить через Telegram', 'Откройте приложение из меню бота COINOVA.'],
+ en: ['Continue with Telegram', 'Open the app from the COINOVA bot menu.'],
 } as const;
 const returnPath = () => window.location.pathname + window.location.search;
 const authPath = (action: 'signin' | 'signout') =>
   `/${action}-with-chatgpt?return_to=${encodeURIComponent(returnPath())}`;
 async function request<T>(url:string,method='GET',body?:unknown):Promise<T>{
  const headers:Record<string,string> = method==='POST'?{'X-Coinova-Action':'1'}:{};
+ if(isRender && telegramWebApp()?.initData) headers['X-Coinova-Telegram'] = telegramWebApp()!.initData!;
  if(body!==undefined)headers['Content-Type']='application/json';
  const r=await fetch('/api'+url,{method,headers,body:JSON.stringify(body)});
  if(r.status===401)throw new Error('sign_in_required');
@@ -325,7 +327,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   const v=await request<State>('/bootstrap'+(ref?'?ref='+encodeURIComponent(ref):''));
   setData(v);setError('');
  }
- useEffect(()=>{void reload().catch(e=>setError(e.message)).finally(()=>setLoading(false))},[]);
+ useEffect(()=>{if(isRender)telegramWebApp()?.ready?.();void reload().catch(e=>setError(e.message)).finally(()=>setLoading(false))},[]);
  async function action(key:string,url:string,body?:unknown){
   if(busy)return;
   setBusy(key);setError('');
@@ -646,8 +648,13 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   <section className="telegram-welcome-content">
    <h1>COIN<span>O</span>VA</h1>
    <p>{t('platformName')}</p>
-   <a className="primary-btn telegram-welcome-action" href="https://t.me/coin_ova_bot" target="_blank" rel="noopener noreferrer"><Send size={20}/>{telegramLoginCopy[lang][0]}</a>
-   <p className="telegram-welcome-note">{telegramLoginCopy[lang][1]}</p>
+   {telegramWebApp()?.initData ?
+    <button className="primary-btn telegram-welcome-action" disabled={loading} onClick={()=>{
+     setLoading(true);
+     void reload().catch(e=>setError(e.message)).finally(()=>setLoading(false));
+    }}><Send size={20}/>{loading ? t('loading') : telegramLoginCopy[lang][0]}</button> :
+    <a className="primary-btn telegram-welcome-action" href="https://t.me/coin_ova_bot" target="_blank" rel="noopener noreferrer"><Send size={20}/>{telegramLoginCopy[lang][0]}</a>}
+   <p className="telegram-welcome-note" role="status">{telegramWebApp()?.initData && error ? errorMessage : telegramLoginCopy[lang][1]}</p>
   </section>
  </main>;
  return <div className="app-shell">{header}{!data?<main className="login-screen"><div className="login-art"><PlanetLogo size={100}/></div><h1>COINOVA</h1><p>{t('platformName')}</p><div className="glass login-card"><h2>{t('signIn')}</h2>{loading?<p>{t('loading')}</p>:<><p className="muted">{errorMessage}</p>{error==='sign_in_required'?<a href={authPath('signin')} target="_top" className="primary-btn">{t('chatgptSignIn')}</a>:<button className="primary-btn" onClick={()=>location.reload()}>{t('retry')}</button>}</>}</div></main>:<div className="layout"><aside className="sidebar"><nav>{nav.concat(extras).map(([name,Icon])=><button key={name} className={activePage===name?'selected':''} onClick={()=>changePage(name)}><Icon size={20}/><span>{t(name)}</span></button>)}</nav></aside><main className="content"><div className="content-inner" key={page}>{error&&<div className="error-banner"><span role="alert">{errorMessage}</span><button onClick={()=>setError('')}>×</button></div>}{pages[page]()}<footer className="footer"><PlanetLogo size={21}/> COINOVA © 2026 · {t('limit')}</footer></div></main></div>}{data&&<nav className="bottom-nav" aria-label={t('navigation')}>{nav.map(([name,Icon])=><button key={name} aria-current={activePage===name?'page':undefined} className={activePage===name?'active':''} onClick={()=>changePage(name)}><Icon size={20} strokeWidth={activePage===name?2.6:1.8}/><span>{t(name)}</span></button>)}</nav>}</div>;

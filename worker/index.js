@@ -175,6 +175,8 @@ async function account(db, subject, request, now) {
   }
   const ref = new URL(request.url).searchParams.get('ref') ?? '';
   const state = initialState(id, name.trim().slice(0, 80) || 'Explorer', now);
+  const telegramId = request.headers.get('oai-authenticated-user-telegram-id');
+  if (telegramId && subject === 'telegram:' + telegramId) state.telegramId = telegramId;
   await db.prepare(`INSERT INTO accounts(subject,id,referred_by,state)
     VALUES (?, ?, (SELECT id FROM accounts WHERE id = ?), ?) ON CONFLICT(subject) DO NOTHING`)
     .bind(subject, id, ref, JSON.stringify(state)).run();
