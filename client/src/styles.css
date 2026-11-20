@@ -1305,7 +1305,7 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 }
 .ranking-stage h1 span { font-size: .42em; }
 .ranking-stage p { margin: 0 8px 14px; color: #d9c7eb; font-size: .88rem; }
-.ranking-stage img { display: block; width: 100%; height: auto; border-radius: 20px 20px 0 0; }
+.ranking-stage > img { display: block; width: 100%; height: auto; border-radius: 20px 20px 0 0; }
 .ranking-podium {
   position: relative;
   isolation: isolate;
@@ -1369,8 +1369,10 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
   font-size: clamp(.64rem, 3vw, 1.3rem);
   font-weight: 800;
 }
+.podium-avatar .profile-avatar-photo { min-width: 0; }
 .podium-result {
   min-width: 0;
+  text-align: center;
   display: grid;
   gap: 2px;
   padding-inline-start: clamp(4px, 1vw, 8px);
