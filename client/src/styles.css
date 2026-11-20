@@ -1308,70 +1308,82 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 .ranking-stage img { display: block; width: 100%; height: auto; border-radius: 20px 20px 0 0; }
 .ranking-podium {
   position: relative;
+  isolation: isolate;
   list-style: none;
-  padding: 0;
-  margin: clamp(-11px, -1.8vw, -6px) auto 0;
+  margin: -3px auto 20px;
+  padding: 0 2% 10px;
   display: grid;
   grid-template-columns: 31% 38% 31%;
-  align-items: start;
+  align-items: end;
+}
+.ranking-podium::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: auto 0 0;
+  height: 30px;
+  border-radius: 50%;
+  border-bottom: 2px solid #e9aa58;
+  background: radial-gradient(ellipse at 50% 10%, #7c3f96, #2b153f 65%, #130b25);
+  box-shadow: 0 7px 14px #08041095, 0 2px 12px #c56cff40;
 }
 .ranking-podium-slot {
-  --metal: #dae2fe;
-  --pedestal: #393047;
-  position: relative;
-  min-width: 0;
+  --rim: #e4ae75;
   display: grid;
-  justify-items: center;
-  align-content: start;
-  gap: 5px;
-  margin-inline: 6%;
-  padding: 13px 3px 14px;
-  min-height: 100px;
-  border-radius: 0 0 28% 28% / 0 0 15px 15px;
-  background: linear-gradient(180deg, transparent, var(--pedestal) 18px, #171022 96%);
-  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--metal) 46%, transparent);
-  color: var(--metal);
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(4px, 1.4vw, 11px);
+  margin-inline: 3%;
+  min-width: 0;
+  min-height: clamp(70px, 16vw, 112px);
+  padding: 8px clamp(4px, 1.4vw, 10px);
+  border-inline: 1px solid #a565bc85;
+  border-bottom: 5px solid transparent;
+  border-radius: 0 0 42% 42% / 0 0 10px 10px;
+  background:
+    radial-gradient(ellipse at 48% 115%, #653762, transparent 62%) padding-box,
+    linear-gradient(90deg, #180922, #32143a 50%, #180922) padding-box,
+    linear-gradient(90deg, #7b462e, var(--rim) 50%, #814d37) border-box;
+  box-shadow: 0 3px 5px #0e041a8f;
+  text-align: start;
 }
 .ranking-podium-slot[data-place="1"] {
   grid-column: 2;
   grid-row: 1;
-  --metal: #ffdc8d;
-  --pedestal: #57341f;
-  margin-inline: 3%;
-  min-height: 113px;
+  z-index: 1;
+  --rim: #ffe2a1;
+  margin-top: clamp(-14px, -2vw, -6px);
+  align-self: stretch;
 }
-.ranking-podium-slot[data-place="2"] { grid-column: 1; grid-row: 1; }
-.ranking-podium-slot[data-place="3"] { grid-column: 3; grid-row: 1; --metal: #f5b08c; --pedestal: #4b2a28; }
-.ranking-place {
-  font: 700 .65rem/1 system-ui, sans-serif;
-  letter-spacing: .12em;
-  color: var(--metal);
+.ranking-podium-slot[data-place="2"] { grid-column: 1; grid-row: 1; --rim: #eadcea; }
+.ranking-podium-slot[data-place="3"] { grid-column: 3; grid-row: 1; }
+.podium-avatar {
+  width: clamp(21px, 7vw, 56px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--rim);
+  border-radius: 50%;
+  color: #ffdf9d;
+  background: radial-gradient(circle at 34% 25%, #674078, #23112f 77%);
+  font-size: clamp(.64rem, 3vw, 1.3rem);
+  font-weight: 800;
 }
-.ranking-podium-slot strong {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font: 700 clamp(.76rem, 3.2vw, 1.2rem)/1.2 system-ui, sans-serif;
-  color: #fff8ef;
+.podium-result {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding-inline-start: clamp(4px, 1vw, 8px);
+  border-inline-start: 1px solid #d68d5c83;
 }
-.ranking-podium-slot[data-place="1"] strong {
-  color: #fff1c9;
-  font: 700 clamp(.95rem, 4vw, 1.45rem)/1.15 Georgia, serif;
-  text-shadow: 0 2px 9px #df934750;
+.podium-result strong {
+  color: #fff3e8;
+  font-size: clamp(.65rem, 3vw, 1.25rem);
+  line-height: 1.13;
+  overflow-wrap: anywhere;
 }
-.ranking-podium-slot span:not(.ranking-place) {
-  padding: 2px 6px;
-  border: 1px solid #ffffff33;
-  border-radius: 20px;
-  color: #f4e4ff;
-  font-size: .65rem;
-}
-.ranking-podium-slot b {
-  color: var(--metal);
-  font-size: clamp(.76rem, 3.1vw, 1.1rem);
-  font-variant-numeric: tabular-nums;
-}
+.podium-result b { color: #ffd582; font-size: clamp(.64rem, 2.7vw, 1.05rem); font-variant-numeric: tabular-nums; }
+.podium-result span { color: #e2c9eb; font-size: clamp(.58rem, 2.2vw, .8rem); }
 .ranking-person strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ranking-person span, .ranking-score small { color: #d7c6e7; font-size: .75rem; }
 .ranking-list { display: grid; gap: 7px; list-style: none; margin: 18px 0 0; padding: 0; }
