@@ -1283,3 +1283,21 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 }
 .shop-cosmetic-art[data-cosmetic="gold_orbit"] { background-position: 50% 0; }
 .shop-cosmetic-art[data-cosmetic="cosmic_trail"] { background-position: 100% 0; }
+
+.ranking-hero{display:grid;grid-template-columns:minmax(0,1fr) clamp(66px,24vw,136px);align-items:center;gap:10px;padding:clamp(16px,5vw,32px);border:1px solid #d6ad6454;border-radius:21px;background:linear-gradient(90deg,#120b21f2,#21113584),url('/profile-nebula.webp') center 74%/cover}
+.ranking-hero .eyebrow{color:#ffdd99}
+.ranking-hero h1{margin:9px 0 6px;font:700 clamp(25px,6.5vw,46px)/1.08 Georgia,serif}
+.ranking-hero p{margin:0;color:#d1bfe3;font-size:.9rem}
+.ranking-hero img{display:block;width:100%;height:auto}
+.ranking-list{display:grid;gap:8px;list-style:none;margin:15px 0 0;padding:0}
+.ranking-entry{--rank:#cdb6f4;display:grid;grid-template-columns:32px 40px minmax(0,1fr) auto;align-items:center;gap:9px;padding:10px;border:1px solid #d9bdff29;border-radius:14px;background:#1b1429}
+.ranking-entry[data-place="1"]{--rank:#ffdc91;padding-block:15px;border-color:#e5b86283;background:linear-gradient(112deg,#4b301e,#241335 65%,#211631)}
+.ranking-entry[data-place="2"]{--rank:#c9dcff;border-color:#9eb9ee62}
+.ranking-entry[data-place="3"]{--rank:#eebf9f;border-color:#d7936a62}
+.ranking-medal,.ranking-avatar{display:grid;place-content:center;text-align:center;min-height:32px;border-radius:9px;font-weight:800;color:var(--rank);background:#ffffff0b}
+.ranking-avatar{height:40px;border-radius:50%;background:#402868;border:1px solid #a681e35e}
+.ranking-person{min-width:0;display:grid;gap:3px}
+.ranking-person strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ranking-person span,.ranking-score small{font-size:.75rem;color:#d2c0e5}
+.ranking-score{color:var(--rank);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ranking-empty{padding:16px;color:#d2c0e5}
