@@ -19,7 +19,7 @@ function EquipmentArt({item}: {item: Equipment}) {
   backgroundPosition: `${(item.art % 5) * 25}% ${Math.floor(item.art / 5) * 12.5}%`,
  }}/>;
 }
-type Transaction={id:string;currency:string;delta:string;reason:string;created_at:string};type State={user:User;equipment?:Equipment[];miningConfig?:Record<string,MiningConfig>;deviceMining?:Record<string,({last_claimed_at:string;earned_fc:number}&Partial<MiningConfig>)|null>;payoutEnabled?:boolean;payouts?:Payout[];miningLevel?:number;miningLevels?:{price:number;rate:number}[];transactions:Transaction[];mining:{id:string;started_at:string;last_claimed_at:string;earned_fc:string;rate?:number;capacity?:number}|null;claims:{task_id:string;claim_day:string|null}[];bonuses:{claim_day:string}[];purchases:{item_id:string}[];leaders:{avatar?:string|null;first_name:string;level:number;xp:string;fc:string}[];miningHistory:{started_at:string;ended_at:string|null;earned_fc:string}[];serverTime:string;tasks:Mission[];isAdmin?:boolean;managedTasks?:Mission[];telegramLinked?:boolean;telegramBot?:string;shop:{id:string;price:number}[]};
+type Transaction={id:string;currency:string;delta:string;reason:string;created_at:string};type State={user:User;equipment?:Equipment[];miningConfig?:Record<string,MiningConfig>;deviceMining?:Record<string,({last_claimed_at:string;earned_fc:number}&Partial<MiningConfig>)|null>;payoutEnabled?:boolean;payouts?:Payout[];miningLevel?:number;miningLevels?:{price:number;rate:number}[];transactions:Transaction[];mining:{id:string;started_at:string;last_claimed_at:string;earned_fc:string;rate?:number;capacity?:number}|null;claims:{task_id:string;claim_day:string|null}[];bonuses:{claim_day:string}[];purchases:{item_id:string}[];leaders:{avatar?:string|null;first_name:string;level:number;xp:string;fc:string}[];miningHistory:{started_at:string;ended_at:string|null;earned_fc:string}[];serverTime:string;tasks:Mission[];isAdmin?:boolean;managedTasks?:Mission[];telegramLinked?:boolean;telegramBot?:string;shop:{id:string;price:number}[];shopBundle?:{id:string;itemIds:string[];price:number;endsAt:number}|null};
 const isRender = window.location.hostname === 'coinova-web.onrender.com';
 const telegramWebApp = () => (window as Window & {Telegram?: {WebApp?: {initData?: string; ready?: () => void}}}).Telegram?.WebApp;
 function loadTelegramSdk() {
@@ -414,7 +414,11 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   return user.avatar ? <img className="profile-avatar-photo" src={user.avatar} alt=""/> : user.first_name.slice(0,1).toUpperCase();
  }
  const errorKey=('error_'+error) as TranslationKey;
- const errorMessage=error ? (dictionary[lang][errorKey] || t('error_server_error')) : '';
+ const bundleErrors: Record<string, string> = {
+  invalid_bundle: {uz:'2–5 ta buyum tanlang. Narx 50 RC dan boshlanishi va buyumlar jami narxidan past bo‘lishi kerak.',ru:'Выберите 2–5 товаров. Цена от 50 RC и ниже общей стоимости.',en:'Select 2–5 items and set a price of at least 50 RC, below their total.'}[lang],
+  bundle_expired: {uz:'Bu aksiya tugagan yoki yangilangan.',ru:'Акция истекла или была обновлена.',en:'This offer has ended or changed.'}[lang],
+ };
+ const errorMessage=error ? (bundleErrors[error] || dictionary[lang][errorKey] || t('error_server_error')) : '';
  function changePage(v:Page){setCopied(false);setPage(v);setNotifs(false);setError('');window.scrollTo({top:0,behavior:'smooth'})}
  const header=<header className="header"><button className="brand" onClick={()=>changePage('home')}><img className="brand-mark" src="/coinova-mark.webp" width={40} height={40} alt=""/><span className="brand-text">COINOVA</span></button><div className="header-actions"><LanguagePicker lang={lang} label={t('language')} open={languageOpen}
   onToggle={()=>{setLanguageOpen(!languageOpen);setNotifs(false)}}
@@ -707,8 +711,44 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   <Card className="list-card"><Transactions/></Card>
  </details></>}
  function ShopPage(){
+  const bundle = data!.shopBundle;
+  const seconds = Math.max(0, Math.ceil(((bundle?.endsAt ?? 0) - now) / 1000));
+  const available = [...(data!.equipment ?? []).filter(item => item.currency === 'RC'), ...data!.shop.map(item => ({...item, name: t(item.id as TranslationKey)}))];
+  const items = bundle ? available.filter(item => bundle.itemIds.includes(item.id)) : [];
+  const ownsItem = items.some(item => data!.purchases.some(purchase => purchase.item_id === item.id));
+  const clock = [Math.floor(seconds / 3600), Math.floor(seconds / 60) % 60, seconds % 60].map(value => String(value).padStart(2, '0')).join(':');
+  const offerTitle = {uz:'2 soatlik aksiya',ru:'Акция на 2 часа',en:'2-hour offer'}[lang];
   return <>
    <div className="page-heading"><span className="eyebrow"><ShoppingBag size={15}/> {t('shop')}</span><h1>{t('shopTitle')}</h1></div>
+   {bundle && seconds > 0 && <details className="equipment-category" open>
+    <summary>{offerTitle} · {clock}</summary>
+    <ul>{items.map(item => <li key={item.id}>{item.name}</li>)}</ul>
+    <p className="gold-text"><del>{number(items.reduce((total, item) => total + item.price, 0))} RC</del> → {number(bundle.price)} RC · {number(bundle.price * 100)} {lang === 'uz' ? 'so‘m' : 'UZS'}</p>
+    <button className="secondary-btn" disabled={ownsItem || Number(data!.user.rc) < bundle.price || !!busy}
+     onClick={()=>action('bundle', '/shop/bundle/' + bundle.id + '/buy')}>
+     {ownsItem ? {uz:'To‘plamdagi buyumlardan biri sizda bor',ru:'Один из предметов уже куплен',en:'You already own a bundle item'}[lang] : Number(data!.user.rc) < bundle.price ? t('notEnough') : t('buy')}
+    </button>
+   </details>}
+   {data!.isAdmin && <details className="equipment-category">
+    <summary>{{uz:'Aksiya to‘plamini yaratish',ru:'Создать акционный набор',en:'Create a bundle offer'}[lang]}</summary>
+    <form onSubmit={event=>{
+     event.preventDefault();
+     const form = new FormData(event.currentTarget);
+     const itemIds = form.getAll('items').map(String);
+     const price = Number(form.get('price'));
+     const total = available.filter(item => itemIds.includes(item.id)).reduce((sum, item) => sum + item.price, 0);
+     if (itemIds.length < 2 || itemIds.length > 5 || !Number.isSafeInteger(price) || price < 50 || price >= total) {
+      setError('invalid_bundle');
+      return;
+     }
+     void action('admin-bundle', '/admin/shop-bundle', {itemIds, price});
+    }}>
+     <p>{{uz:'2–5 ta RC buyumini tanlang. Yangi aksiya joriy aksiyani almashtiradi.',ru:'Выберите 2–5 товаров за RC. Новый набор заменит текущий.',en:'Choose 2–5 RC items. A new offer replaces the current one.'}[lang]}</p>
+     {available.map(item => <div key={item.id}><label><input type="checkbox" name="items" value={item.id}/> {item.name} · {item.price} RC</label></div>)}
+     <p><label>{{uz:'To‘plam narxi (RC)',ru:'Цена набора (RC)',en:'Bundle price (RC)'}[lang]} <input type="number" name="price" required min={50} step={1}/></label></p>
+     <button type="submit" className="secondary-btn" disabled={!!busy}>{offerTitle}</button>
+    </form>
+   </details>}
    {(['FC','RC'] as const).map(currency => <section key={currency}>
     {(['miner','boost','storage'] as const).map(kind => <details className="equipment-category" key={kind} open={currency === 'FC' && kind === 'miner'}>
      <summary>{equipmentLabels[lang][kind]} · {currency}</summary>
