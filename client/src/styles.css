@@ -1273,3 +1273,13 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 .mining-modifier{display:flex;align-items:center;gap:8px;padding:8px}
 .mining-modifier .equipment-art{width:55px;flex:none}
 @media(max-width:700px){.equipment-shop-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.equipment-shop-grid .shop-item{min-width:0;padding:8px}}
+
+.shop-cosmetic-art {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  background: #100b24 url('/cosmetics-atlas.webp') no-repeat;
+  background-size: 300% 100%;
+}
+.shop-cosmetic-art[data-cosmetic="gold_orbit"] { background-position: 50% 0; }
+.shop-cosmetic-art[data-cosmetic="cosmic_trail"] { background-position: 100% 0; }
