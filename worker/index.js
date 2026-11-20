@@ -5,6 +5,10 @@ const tasks = [
   { id: 'daily_explore', fc: 15, xp: 20, type: 'daily' },
   { id: 'daily_mining', fc: 20, xp: 35, type: 'once' },
 ];
+const miningDevices = [
+  { id: 'lunar_drill', price: 500, rate: 6 },
+  { id: 'plasma_refinery', price: 1500, rate: 12 },
+];
 const shop = [
   { id: 'nebula_avatar', price: 20 },
   { id: 'gold_orbit', price: 45 },
@@ -221,7 +225,7 @@ async function bootstrap(db, state, now, env) {
   const isAdmin = Boolean(env.COINOVA_ADMIN_ID && state.user.id === env.COINOVA_ADMIN_ID);
   const configured = await campaigns(db, env);
   return { ...visible, payouts: (payouts ?? []).map(cleanPayout), payoutEnabled: payoutEnabled(env), telegramLinked: Boolean(telegramId), telegramBot: env.TELEGRAM_BOT_TOKEN ? env.TELEGRAM_BOT_USERNAME : undefined,
-    isAdmin, ...(isAdmin ? { managedTasks: configured } : {}), miningLevel: state.miningLevel ?? 1, miningLevels, leaders: leaderboard.results, serverTime: now, tasks: [...tasks, ...configured.map(({ secret, ...task }) => task)], shop };
+    isAdmin, ...(isAdmin ? { managedTasks: configured } : {}), miningLevel: state.miningLevel ?? 1, miningLevels, leaders: leaderboard.results, serverTime: now, miningStorage: miningLevels[(state.miningLevel ?? 1) - 1].rate * 60, miningDevices, tasks: [...tasks, ...configured.map(({ secret, ...task }) => task)], shop };
 }
 
 async function apply(state, path, date, referralFC, env, db, body) {
@@ -289,27 +293,35 @@ async function apply(state, path, date, referralFC, env, db, body) {
       network: body.card.startsWith('8600') ? 'Uzcard' : 'Humo', card: await cardCipher(env, body.card), holder: await cardCipher(env, holder), createdAt: now }, ...payouts];
     return;
   }
-  if (path === '/mining/start') {
-    if (state.mining) fail('mining_active');
-    state.mining = { id: crypto.randomUUID(), started_at: now, last_claimed_at: now, earned_fc: 0 };
-    return;
-  }
-  if (path === '/mining/claim' || path === '/mining/stop') {
-    const mining = state.mining;
+  const miningAction = path.match(/^\/mining\/(?:(lunar_drill|plasma_refinery)\/)?(start|claim|stop)$/);
+  if (miningAction) {
+    const [, deviceId, operation] = miningAction;
+    if (deviceId && !state.purchases.some(item => item.item_id === deviceId)) fail('not_found', 404);
+    const device = miningDevices.find(item => item.id === deviceId);
+    const deviceRate = device?.rate ?? rate;
+    const capacity = device ? deviceRate * (60 + (level - 1) * 15) : rate * 60;
+    const sessions = deviceId ? (state.deviceMining ??= {}) : state;
+    const slot = deviceId ?? 'mining';
+    if (operation === 'start') {
+      if (sessions[slot]) fail('mining_active');
+      sessions[slot] = { id: crypto.randomUUID(), started_at: now, last_claimed_at: now, earned_fc: 0 };
+      return;
+    }
+    const mining = sessions[slot];
     if (!mining) fail('mining_inactive');
     const elapsed = Math.max(0, date.getTime() - Date.parse(mining.last_claimed_at));
-    const interval = 60000 / rate;
-    const coins = Math.floor(Math.min(elapsed, 3600000) / interval);
-    if (!coins && path === '/mining/claim') fail('mining_too_early');
+    const interval = 60000 / deviceRate;
+    const coins = Math.min(capacity, Math.floor(elapsed / interval));
+    if (!coins && operation === 'claim') fail('mining_too_early');
     const xp = Math.floor((mining.earned_fc + coins) / 3) - Math.floor(mining.earned_fc / 3);
     record(state, 'FC', coins, 'mining', now);
     record(state, 'XP', xp, 'mining_xp', now);
     mining.earned_fc += coins;
-    if (path === '/mining/stop') {
-      state.miningHistory = [{ ...mining, ended_at: now }, ...state.miningHistory].slice(0, 12);
-      state.mining = null;
+    if (operation === 'stop') {
+      state.miningHistory = [{ ...mining, ...(deviceId ? { deviceId } : {}), ended_at: now }, ...state.miningHistory].slice(0, 12);
+      sessions[slot] = null;
     } else {
-      mining.last_claimed_at = new Date(elapsed >= 3600000 ? date.getTime() :
+      mining.last_claimed_at = new Date(coins === capacity ? date.getTime() :
         Date.parse(mining.last_claimed_at) + coins * interval).toISOString();
     }
     return;
@@ -346,10 +358,11 @@ async function apply(state, path, date, referralFC, env, db, body) {
     return { awardedFC: task.fc };
   }
   const itemId = path.match(/^\/shop\/([^/]+)\/buy$/)?.[1];
-  const item = shop.find(product => product.id === itemId);
+  const device = miningDevices.find(product => product.id === itemId);
+  const item = device ?? shop.find(product => product.id === itemId);
   if (item) {
     if (state.purchases.some(purchase => purchase.item_id === item.id)) fail('already_owned');
-    record(state, 'RC', -item.price, 'shop', now);
+    record(state, device ? 'FC' : 'RC', -item.price, 'shop', now, device ? referralFC : 0);
     state.purchases.push({ item_id: item.id, created_at: now });
     return;
   }
@@ -402,7 +415,7 @@ async function api(request, env, url) {
     const row = await db.prepare('SELECT version, state FROM accounts WHERE subject = ?').bind(subject).first();
     if (!row) return json({ error: 'sign_in_required' }, 401);
     const state = JSON.parse(row.state);
-    const referrals = (path.startsWith('/mining/upgrade/') || path === '/wallet/exchange')
+    const referrals = (path.startsWith('/mining/upgrade/') || path === '/wallet/exchange' || path.startsWith('/shop/'))
       ? await db.prepare('SELECT COUNT(*) AS count FROM accounts WHERE referred_by = ?').bind(state.user.id).first()
       : null;
     const outcome = await apply(state, path, new Date(), 50 * (referrals?.count ?? 0), env, db, body);
