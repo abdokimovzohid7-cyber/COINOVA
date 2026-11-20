@@ -347,7 +347,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
    setBusy('');
   }
  }
- const today=tashkentDay(now);useEffect(()=>{localStorage.setItem('coinova-lang',lang);document.documentElement.lang=lang},[lang]);useEffect(()=>{setNow(Date.now());const id=window.setInterval(()=>setNow(Date.now()),page==='mining'?1000:30000);return()=>clearInterval(id)},[page]);
+ const today=tashkentDay(now);useEffect(()=>{localStorage.setItem('coinova-lang',lang);document.documentElement.lang=lang},[lang]);useEffect(()=>{setNow(Date.now());const id=window.setInterval(()=>setNow(Date.now()),(page==='mining'||page==='shop')?1000:30000);return()=>clearInterval(id)},[page]);
  async function reload(){
   const startParam = isRender ? new URLSearchParams(telegramWebApp()?.initData).get('start_param') : null;
   const referralCode = startParam?.match(/^ref_([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})$/i)?.[1];
