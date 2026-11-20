@@ -10,6 +10,20 @@ type Mission={id:string;fc:number;xp:number;type:string;kind?:'channel'|'bot';ha
 type Transaction={id:string;currency:string;delta:string;reason:string;created_at:string};type State={user:User;payoutEnabled?:boolean;payouts?:Payout[];miningLevel?:number;miningLevels?:{price:number;rate:number}[];transactions:Transaction[];mining:{id:string;started_at:string;last_claimed_at:string;earned_fc:string}|null;claims:{task_id:string;claim_day:string|null}[];bonuses:{claim_day:string}[];purchases:{item_id:string}[];leaders:{first_name:string;level:number;xp:string;fc:string}[];miningHistory:{started_at:string;ended_at:string|null;earned_fc:string}[];serverTime:string;tasks:Mission[];isAdmin?:boolean;managedTasks?:Mission[];telegramLinked?:boolean;telegramBot?:string;shop:{id:string;price:number}[]};
 const isRender = window.location.hostname === 'coinova-web.onrender.com';
 const telegramWebApp = () => (window as Window & {Telegram?: {WebApp?: {initData?: string; ready?: () => void}}}).Telegram?.WebApp;
+function loadTelegramSdk() {
+ if (telegramWebApp()) return Promise.resolve();
+ return new Promise<void>((resolve, reject) => {
+  const script = document.createElement('script');
+  const timeout = window.setTimeout(() => {
+   script.remove();
+   reject(new Error('telegram_unavailable'));
+  }, 5000);
+  script.src = 'https://telegram.org/js/telegram-web-app.js';
+  script.onload = () => { clearTimeout(timeout); resolve(); };
+  script.onerror = () => { clearTimeout(timeout); script.remove(); reject(new Error('telegram_unavailable')); };
+  document.head.append(script);
+ });
+}
 const telegramLoginCopy = {
  uz: ['Telegram orqali davom etish', 'Ilovani COINOVA botidagi menyudan oching.'],
  ru: ['Продолжить через Telegram', 'Откройте приложение из меню бота COINOVA.'],
@@ -329,7 +343,24 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   const v=await request<State>('/bootstrap'+(ref?'?ref='+encodeURIComponent(ref):''));
   setData(v);setError('');
  }
- useEffect(()=>{if(isRender)telegramWebApp()?.ready?.();void reload().catch(e=>setError(e.message)).finally(()=>setLoading(false))},[]);
+ async function openAccount() {
+  setLoading(true);
+  try {
+   if (isRender) {
+    await loadTelegramSdk();
+    const app = telegramWebApp();
+    app?.ready?.();
+    if (!app?.initData) return;
+   }
+   await reload();
+  } catch (cause) {
+   setError((cause as Error).message);
+  } finally {
+   setLoading(false);
+  }
+ }
+ useEffect(()=>{void openAccount()},[]);
+
  async function action(key:string,url:string,body?:unknown){
   if(busy)return;
   setBusy(key);setError('');
@@ -652,11 +683,8 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   <section className="telegram-welcome-content">
    <h1>COIN<span>O</span>VA</h1>
    <p>{t('platformName')}</p>
-   {telegramWebApp()?.initData ?
-    <button className="primary-btn telegram-welcome-action" disabled={loading} onClick={()=>{
-     setLoading(true);
-     void reload().catch(e=>setError(e.message)).finally(()=>setLoading(false));
-    }}><Send size={20}/>{loading ? t('loading') : telegramLoginCopy[lang][0]}</button> :
+   {loading || telegramWebApp()?.initData || error === 'telegram_unavailable' ?
+    <button className="primary-btn telegram-welcome-action" disabled={loading} onClick={()=>void openAccount()}><Send size={20}/>{loading ? t('loading') : telegramLoginCopy[lang][0]}</button> :
     <a className="primary-btn telegram-welcome-action" href="https://t.me/coin_ova_bot" target="_blank" rel="noopener noreferrer"><Send size={20}/>{telegramLoginCopy[lang][0]}</a>}
    <p className="telegram-welcome-note" role="status">{telegramWebApp()?.initData && error ? errorMessage : telegramLoginCopy[lang][1]}</p>
   </section>
