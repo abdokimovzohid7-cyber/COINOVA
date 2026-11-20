@@ -518,10 +518,13 @@ async function api(request, env, url) {
   if (!subject) return json({ error: 'sign_in_required' }, 401);
   if (request.method === 'POST' && (request.headers.get('Origin') !== url.origin ||
     request.headers.get('X-Coinova-Action') !== '1')) return json({ error: 'forbidden' }, 403);
-  if (!env.COINOVA_ADMIN_ID && /^[1-9][0-9]{0,17}$/.test(env.COINOVA_ADMIN_TELEGRAM_ID ?? '')) {
+  if (/^[1-9][0-9]{0,17}$/.test(env.COINOVA_ADMIN_TELEGRAM_ID ?? '')) {
     const adminSubject = 'telegram:' + env.COINOVA_ADMIN_TELEGRAM_ID;
-    const admin = await db.prepare('SELECT state FROM accounts WHERE subject = ?').bind(adminSubject).first();
-    if (admin) env = { ...env, COINOVA_ADMIN_ID: JSON.parse(admin.state).user.id };
+    if (subject === adminSubject && request.method === 'GET' && path === '/bootstrap') {
+      await account(db, subject, request, new Date().toISOString());
+    }
+    const admin = await db.prepare('SELECT id FROM accounts WHERE subject = ?').bind(adminSubject).first();
+    env = { ...env, COINOVA_ADMIN_ID: admin?.id };
   }
   const adminPayout = path.match(/^\/admin\/payouts(?:\/([0-9a-f-]{36})\/([0-9a-f-]{36})\/(card|approve|reject|receipt))?$/);
   if (adminPayout) return payoutAdmin(request, db, env, subject, request.method, ...adminPayout.slice(1));
