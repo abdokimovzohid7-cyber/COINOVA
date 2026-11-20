@@ -1405,3 +1405,13 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 .ranking-person { display: grid; min-width: 0; gap: 3px; }
 .ranking-score { color: #ffdc99; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ranking-entry[data-vacant="true"] .ranking-person { color: #d7c6e7; }
+
+.device-upgrade-art { position: relative; isolation: isolate; }
+.device-level-badge { position: absolute; inset: 8px auto auto 8px; padding: 3px 7px; border-radius: 999px; background: #1e103be8; color: #f3dfac; border: 1px solid #b794e5; font-size: .7rem; font-weight: 700; }
+.device-module-icons { position: absolute; inset: auto 5px 5px; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+.device-module-icons span { display: grid; place-items: center; padding: 4px; border-radius: 7px; color: #ffe3a5; background: #231044f3; border: 1px solid #bd8aeb; }
+.device-module-icons span:last-child { border-color: #ffdc85; box-shadow: 0 0 8px #d68cff80; }
+.device-upgrade-art[data-level="10"] .device-level-badge { border-color: #ffdc85; background: #4a255b; }
+.device-upgrade-action { display: grid; gap: 5px; margin-top: 10px; }
+.device-upgrade-action p { margin: 0; }
+.device-upgrade-action button { min-width: 0; }
