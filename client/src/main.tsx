@@ -449,7 +449,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   </Card>;
  }
  function SectionHeader({title,to}:{title:string;to?:Page}){return <div className="section-title"><h2>{title}</h2>{to&&<button className="text-link" onClick={()=>changePage(to)}>{t('viewAll')} </button>}</div>}
- function Transactions(){return <div className="transaction-list">{data!.transactions.length===0?<p className="empty">{t('noTransactions')}</p>:data!.transactions.map(tx=><div className="transaction" key={tx.id}><span className={'tx-icon '+(Number(tx.delta)>0?'positive':'negative')}>{Number(tx.delta)>0?<ArrowDownLeft size={19}/>:<ArrowUpRight size={19}/>}</span><div className="tx-main"><strong>{tx.reason==='mining_storage_upgrade'?{uz:'Sig‘im yangilandi',ru:'Увеличение вместимости',en:'Capacity upgrade'}[lang]:tx.reason==='shop'?t('shop_transaction'):((tx.reason in dictionary[lang])?t(tx.reason as TranslationKey):tx.reason)}</strong><small className="muted">{date(tx.created_at)}</small></div><span className={Number(tx.delta)>0?'plus':'minus'}>{Number(tx.delta)>0?'+':''}{number(tx.delta)} {tx.currency}</span></div>)}</div>}
+ function Transactions(){return <div className="transaction-list">{data!.transactions.length===0?<p className="empty">{t('noTransactions')}</p>:data!.transactions.map(tx=><div className="transaction" key={tx.id}><span className={'tx-icon '+(Number(tx.delta)>0?'positive':'negative')}>{Number(tx.delta)>0?<ArrowDownLeft size={19}/>:<ArrowUpRight size={19}/>}</span><div className="tx-main"><strong>{tx.reason==='admin_balance'?{uz:'Admin balansni o‘zgartirdi',ru:'Изменение баланса администратором',en:'Admin balance adjustment'}[lang]:tx.reason==='mining_storage_upgrade'?{uz:'Sig‘im yangilandi',ru:'Увеличение вместимости',en:'Capacity upgrade'}[lang]:tx.reason==='shop'?t('shop_transaction'):((tx.reason in dictionary[lang])?t(tx.reason as TranslationKey):tx.reason)}</strong><small className="muted">{date(tx.created_at)}</small></div><span className={Number(tx.delta)>0?'plus':'minus'}>{Number(tx.delta)>0?'+':''}{number(tx.delta)} {tx.currency}</span></div>)}</div>}
  function Leaderboard(){
   const leaders = data!.leaders;
   const title = lang === 'uz' ? 'Kosmik reyting' : lang === 'ru' ? 'Космический рейтинг' : 'Cosmic rankings';
@@ -799,6 +799,21 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   const offerTitle = {uz:'2 soatlik aksiyani boshlash',ru:'Запустить акцию на 2 часа',en:'Launch 2-hour offer'}[lang];
   return <>
    <div className="page-heading"><span className="eyebrow"><ShieldCheck size={16}/> {t('profile')}</span><h1>{adminTitle}</h1><p>{data!.user.first_name} · ID {data!.user.profile_id}</p></div>
+   <Card className="telegram-settings">
+    <h3>{{uz:'Balansni boshqarish',ru:'Управление балансом',en:'Manage balance'}[lang]}</h3>
+    <form onSubmit={event=>{
+     event.preventDefault();
+     const form = new FormData(event.currentTarget);
+     const delta = Number(form.get('amount')) * (form.get('operation') === 'subtract' ? -1 : 1);
+     void action('admin-balance', '/admin/balance', { profileId: form.get('profileId'), currency: form.get('currency'), delta });
+    }}>
+     <label>{{uz:'8 xonali profil ID',ru:'8-значный ID профиля',en:'8-digit profile ID'}[lang]}<input name="profileId" inputMode="numeric" pattern="[1-9][0-9]{7}" maxLength={8} required/></label>
+     <label>{{uz:'Valyuta',ru:'Валюта',en:'Currency'}[lang]}<select name="currency"><option>FC</option><option>RC</option></select></label>
+     <label>{{uz:'Amal',ru:'Действие',en:'Operation'}[lang]}<select name="operation"><option value="add">{{uz:'Ko‘paytirish',ru:'Пополнить',en:'Add'}[lang]}</option><option value="subtract">{{uz:'Ayirish',ru:'Списать',en:'Subtract'}[lang]}</option></select></label>
+     <label>{{uz:'Miqdor',ru:'Сумма',en:'Amount'}[lang]}<input name="amount" type="number" min={1} max={Number.MAX_SAFE_INTEGER} step={1} required/></label>
+     <button className="primary-btn" disabled={!!busy}>{{uz:'Balansni yangilash',ru:'Обновить баланс',en:'Update balance'}[lang]}</button>
+    </form>
+   </Card>
    {data!.isAdmin && <Card className="telegram-settings">
     <h3>{t('adminMissions')}</h3>
     <form onSubmit={e=>{
