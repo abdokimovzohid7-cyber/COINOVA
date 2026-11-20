@@ -6,16 +6,16 @@ const tasks = [
   { id: 'daily_mining', fc: 20, xp: 35, type: 'once' },
 ];
 const equipment = [
-  ["lunar_drill", "Oy burg‘usi", "miner", "FC", 500, 8, 0],
-  ["plasma_refinery", "Plazma qurilmasi", "miner", "FC", 1500, 15, 1],
-  ["fc_miner_3", "Meteor ekskavatori", "miner", "FC", 2500, 23, 2],
-  ["fc_miner_4", "Ion qazgichi", "miner", "FC", 4000, 30, 3],
-  ["fc_miner_5", "Kristall kombayni", "miner", "FC", 4800, 38, 4],
-  ["fc_miner_6", "Asteroid roboti", "miner", "FC", 7200, 50, 5],
-  ["fc_miner_7", "Orbital rig", "miner", "FC", 10400, 63, 6],
-  ["fc_miner_8", "Kvant burg‘usi", "miner", "FC", 14400, 81, 7],
-  ["fc_miner_9", "Nova reaktori", "miner", "FC", 20000, 100, 8],
-  ["fc_miner_10", "Galaktik kon", "miner", "FC", 28000, 125, 9],
+  ["lunar_drill", "Oy burg‘usi", "miner", "FC", 500, 105, 0],
+  ["plasma_refinery", "Plazma qurilmasi", "miner", "FC", 1500, 125, 1],
+  ["fc_miner_3", "Meteor ekskavatori", "miner", "FC", 2500, 150, 2],
+  ["fc_miner_4", "Ion qazgichi", "miner", "FC", 4000, 180, 3],
+  ["fc_miner_5", "Kristall kombayni", "miner", "FC", 4800, 220, 4],
+  ["fc_miner_6", "Asteroid roboti", "miner", "FC", 7200, 260, 5],
+  ["fc_miner_7", "Orbital rig", "miner", "FC", 10400, 310, 6],
+  ["fc_miner_8", "Kvant burg‘usi", "miner", "FC", 14400, 370, 7],
+  ["fc_miner_9", "Nova reaktori", "miner", "FC", 20000, 440, 8],
+  ["fc_miner_10", "Galaktik kon", "miner", "FC", 28000, 520, 9],
   ["fc_boost_1", "Ion chipi", "boost", "FC", 400, 5, 10],
   ["fc_boost_2", "Turbo g‘altak", "boost", "FC", 800, 8, 11],
   ["fc_boost_3", "Lazer moduli", "boost", "FC", 1400, 12, 12],
@@ -36,11 +36,11 @@ const equipment = [
   ["fc_storage_8", "Kvant seyf", "storage", "FC", 7500, 4600, 27],
   ["fc_storage_9", "Nova xazinasi", "storage", "FC", 10500, 6500, 28],
   ["fc_storage_10", "Galaktik depo", "storage", "FC", 15000, 9000, 29],
-  ["rc_miner_1", "Sapfir burg‘u", "miner", "RC", 65, 30, 30],
-  ["rc_miner_2", "Zumrad ekskavatori", "miner", "RC", 90, 55, 31],
-  ["rc_miner_3", "Oltin kon roboti", "miner", "RC", 140, 80, 32],
-  ["rc_miner_4", "Orbital kombayn", "miner", "RC", 220, 110, 33],
-  ["rc_miner_5", "Yulduz qurilmasi", "miner", "RC", 340, 150, 34],
+  ["rc_miner_1", "Sapfir burg‘u", "miner", "RC", 65, 180, 30],
+  ["rc_miner_2", "Zumrad ekskavatori", "miner", "RC", 90, 280, 31],
+  ["rc_miner_3", "Oltin kon roboti", "miner", "RC", 140, 400, 32],
+  ["rc_miner_4", "Orbital kombayn", "miner", "RC", 220, 560, 33],
+  ["rc_miner_5", "Yulduz qurilmasi", "miner", "RC", 340, 750, 34],
   ["rc_boost_1", "Supero‘tkazgich chip", "boost", "RC", 60, 25, 35],
   ["rc_boost_2", "Zumrad turbina", "boost", "RC", 80, 40, 36],
   ["rc_boost_3", "Amber tezlatkich", "boost", "RC", 120, 55, 37],
@@ -59,16 +59,16 @@ const shop = [
 ];
 
 const miningLevels = [
-  { price: 0, rate: 15 },
-  { price: 120, rate: 19 },
-  { price: 300, rate: 25 },
-  { price: 600, rate: 30 },
-  { price: 1100, rate: 38 },
-  { price: 1800, rate: 50 },
-  { price: 2800, rate: 60 },
-  { price: 4200, rate: 75 },
-  { price: 6000, rate: 94 },
-  { price: 8500, rate: 125 },
+  { price: 0, rate: 110 },
+  { price: 120, rate: 160 },
+  { price: 300, rate: 230 },
+  { price: 600, rate: 320 },
+  { price: 1100, rate: 450 },
+  { price: 1800, rate: 600 },
+  { price: 2800, rate: 780 },
+  { price: 4200, rate: 1000 },
+  { price: 6000, rate: 1250 },
+  { price: 8500, rate: 1500 },
 ];
 
 function miningConfig(state) {
@@ -76,10 +76,14 @@ function miningConfig(state) {
   const owned = equipment.filter(item => state.purchases.some(purchase => purchase.item_id === item.id));
   const boost = Math.max(0, ...owned.filter(item => item.kind === 'boost').map(item => item.value));
   const storage = Math.max(0, ...owned.filter(item => item.kind === 'storage').map(item => item.value));
-  const configure = (baseRate, minutes) => ({ rate: baseRate * (100 + boost) / 100, capacity: baseRate * minutes + storage });
+  const miners = owned.filter(item => item.kind === 'miner');
+  const mainRate = miningLevels[level - 1].rate;
+  const boostedTotal = (mainRate + miners.reduce((sum, item) => sum + item.value, 0)) * (100 + boost) / 100;
+  const multiplier = (100 + boost) / 100 * Math.min(1, 3000 / boostedTotal);
+  const configure = (baseRate, minutes) => ({ rate: baseRate * multiplier, capacity: baseRate * minutes + storage });
   return Object.fromEntries([
-    ['mining', configure(miningLevels[level - 1].rate, 60)],
-    ...owned.filter(item => item.kind === 'miner').map(item => [item.id, configure(item.value, 60 + (level - 1) * 15)]),
+    ['mining', configure(mainRate, 60)],
+    ...miners.map(item => [item.id, configure(item.value, 60 + (level - 1) * 15)]),
   ]);
 }
 
