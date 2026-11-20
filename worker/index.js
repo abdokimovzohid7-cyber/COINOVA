@@ -71,19 +71,27 @@ const miningLevels = [
   { price: 8500, rate: 1500 },
 ];
 
+const deviceUpgradePrices = [0, 50, 65, 85, 110, 145, 190, 250, 330, 440];
+
+function deviceBaseRate(item, level) {
+  return Math.round(item.value * (1 + (level - 1) * 0.15));
+}
+
 function miningConfig(state) {
   const level = state.miningLevel ?? 1;
   const owned = equipment.filter(item => state.purchases.some(purchase => purchase.item_id === item.id));
   const boost = Math.max(0, ...owned.filter(item => item.kind === 'boost').map(item => item.value));
   const storage = Math.max(0, ...owned.filter(item => item.kind === 'storage').map(item => item.value));
-  const miners = owned.filter(item => item.kind === 'miner');
+  const miners = owned.filter(item => item.kind === 'miner').map(item => ({
+    ...item, rate: deviceBaseRate(item, state.deviceLevels?.[item.id] ?? 1),
+  }));
   const mainRate = miningLevels[level - 1].rate;
-  const boostedTotal = (mainRate + miners.reduce((sum, item) => sum + item.value, 0)) * (100 + boost) / 100;
+  const boostedTotal = (mainRate + miners.reduce((sum, item) => sum + item.rate, 0)) * (100 + boost) / 100;
   const multiplier = (100 + boost) / 100 * Math.min(1, 3000 / boostedTotal);
   const configure = (baseRate, minutes) => ({ rate: baseRate * multiplier, capacity: baseRate * minutes + storage });
   return Object.fromEntries([
     ['mining', configure(mainRate, 60)],
-    ...miners.map(item => [item.id, configure(item.value, 60 + (level - 1) * 15)]),
+    ...miners.map(item => [item.id, configure(item.rate, 60 + (level - 1) * 15)]),
   ]);
 }
 
@@ -297,7 +305,7 @@ async function bootstrap(db, state, now, env) {
   const isAdmin = Boolean(env.COINOVA_ADMIN_ID && state.user.id === env.COINOVA_ADMIN_ID);
   const configured = await campaigns(db, env);
   return { ...visible, payouts: (payouts ?? []).map(cleanPayout), payoutEnabled: payoutEnabled(env), telegramLinked: Boolean(telegramId), telegramBot: env.TELEGRAM_BOT_TOKEN ? env.TELEGRAM_BOT_USERNAME : undefined,
-    shopBundle: await activeShopBundle(db, env, Date.parse(now)), isAdmin, ...(isAdmin ? { managedTasks: configured } : {}), miningLevel: state.miningLevel ?? 1, miningLevels, leaders: leaderboard.results.map(({ avatar, ...leader }, index) => index < 3 ? { ...leader, avatar } : leader), serverTime: now, equipment, miningConfig: miningConfig(state), tasks: [...tasks, ...configured.map(({ secret, ...task }) => task)], shop };
+    shopBundle: await activeShopBundle(db, env, Date.parse(now)), isAdmin, ...(isAdmin ? { managedTasks: configured } : {}), miningLevel: state.miningLevel ?? 1, miningLevels, deviceUpgradePrices, leaders: leaderboard.results.map(({ avatar, ...leader }, index) => index < 3 ? { ...leader, avatar } : leader), serverTime: now, equipment, miningConfig: miningConfig(state), tasks: [...tasks, ...configured.map(({ secret, ...task }) => task)], shop };
 }
 
 async function apply(state, path, date, referralFC, env, db, body) {
@@ -332,6 +340,19 @@ async function apply(state, path, date, referralFC, env, db, body) {
     }
     record(state, 'RC', -bundle.price, 'shop', now);
     state.purchases.push(...bundle.itemIds.map(id => ({ item_id: id, created_at: now })));
+    return;
+  }
+  const deviceUpgrade = path.match(/^\/mining\/device-upgrade\/([a-z0-9_]+)\/(\d+)$/);
+  if (deviceUpgrade) {
+    const [, itemId, requested] = deviceUpgrade;
+    const item = equipment.find(product => product.id === itemId && product.kind === 'miner');
+    if (!item || !state.purchases.some(purchase => purchase.item_id === itemId)) fail('not_found', 404);
+    if (state.mining || Object.values(state.deviceMining ?? {}).some(Boolean)) fail('mining_upgrade_active');
+    const current = state.deviceLevels?.[itemId] ?? 1;
+    const target = Number(requested);
+    if (target !== current + 1 || target > deviceUpgradePrices.length) fail('mining_upgrade_order');
+    record(state, 'RC', -deviceUpgradePrices[target - 1], 'mining_upgrade', now);
+    state.deviceLevels = { ...state.deviceLevels, [itemId]: target };
     return;
   }
   const upgradeTarget = path.match(/^\/mining\/upgrade\/(\d+)$/)?.[1];
