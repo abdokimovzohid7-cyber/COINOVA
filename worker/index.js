@@ -60,15 +60,15 @@ const shop = [
 
 const miningLevels = [
   { price: 0, rate: 110 },
-  { price: 120, rate: 160 },
-  { price: 300, rate: 230 },
-  { price: 600, rate: 320 },
+  { price: 120, rate: 180 },
+  { price: 300, rate: 260 },
+  { price: 600, rate: 350 },
   { price: 1100, rate: 450 },
-  { price: 1800, rate: 600 },
-  { price: 2800, rate: 780 },
-  { price: 4200, rate: 1000 },
-  { price: 6000, rate: 1250 },
-  { price: 8500, rate: 1500 },
+  { price: 1800, rate: 560 },
+  { price: 2800, rate: 670 },
+  { price: 4200, rate: 780 },
+  { price: 6000, rate: 890 },
+  { price: 8500, rate: 1000 },
 ];
 
 const mainStorageLevels = [
@@ -98,7 +98,7 @@ function miningConfig(state) {
   const multiplier = (100 + boost) / 100 * Math.min(1, 3000 / boostedTotal);
   const configure = (baseRate, minutes) => ({ rate: baseRate * multiplier, capacity: baseRate * minutes + storage });
   return Object.fromEntries([
-    ['mining', { rate: mainRate * multiplier, capacity: mainStorageLevels[(state.mainStorageLevel ?? 1) - 1].capacity }],
+    ['mining', { rate: Math.min(1000, mainRate * multiplier), capacity: mainStorageLevels[(state.mainStorageLevel ?? 1) - 1].capacity }],
     ...miners.map(item => [item.id, configure(item.rate, 60 + (level - 1) * 15)]),
   ]);
 }
@@ -442,7 +442,7 @@ async function apply(state, path, date, referralFC, env, db, body) {
     if (!mining) fail('mining_inactive');
     const elapsed = Math.max(0, date.getTime() - Date.parse(mining.last_claimed_at));
     const capacity = mining.capacity ?? config.capacity;
-    const interval = 60000 / (mining.rate ?? config.rate);
+    const interval = 60000 / (deviceId ? (mining.rate ?? config.rate) : Math.min(1000, mining.rate ?? config.rate));
     const coins = Math.min(capacity, Math.floor(elapsed / interval));
     if (!coins && operation === 'claim') fail('mining_too_early');
     const xp = Math.floor((mining.earned_fc + coins) / 3) - Math.floor(mining.earned_fc / 3);
