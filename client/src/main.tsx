@@ -450,22 +450,34 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   const leaders = data!.leaders;
   const title = lang === 'uz' ? 'Kosmik reyting' : lang === 'ru' ? 'Космический рейтинг' : 'Cosmic rankings';
   const empty = lang === 'uz' ? 'Reyting hali shakllanmoqda.' : lang === 'ru' ? 'Рейтинг пока пуст.' : 'The rankings are empty.';
+  const vacant = lang === 'uz' ? 'Bo‘sh o‘rin' : lang === 'ru' ? 'Свободное место' : 'Open spot';
   return <section className="cosmic-ranking" aria-label={title}>
-   <div className="ranking-hero">
-    <div><span className="eyebrow"><Trophy size={16}/> {t('leaderboard')}</span><h1>{t('topTitle')}</h1><p>{t('topDesc')}</p></div>
-    <img src="/xp-cosmic-trophy.webp" width={114} height={114} alt="" decoding="async"/>
+   <div className="ranking-hero ranking-stage">
+    <h1>{t('topTitle')}</h1><p>{t('topDesc')}</p>
+    <img src="/ranking-podium.webp" width={900} height={305} alt="" decoding="async"/>
+    <ol className="ranking-podium" aria-label={title}>
+     {[1,2,3].map(place => {
+      const leader = leaders[place - 1];
+      return <li key={place} data-place={place} className="ranking-podium-slot">
+       <span className="ranking-place">#{place}</span>
+       <strong title={leader?.first_name}>{leader?.first_name ?? vacant}</strong>
+       {leader && <span>{t('level')} {leader.level}</span>}
+       {leader && <b>{number(leader.xp)} XP</b>}
+      </li>;
+     })}
+    </ol>
    </div>
-   {leaders.length ? <ol className="ranking-list">
-    {leaders.map((user, index) => {
+   {leaders.length > 3 ? <ol className="ranking-list" start={4}>
+    {leaders.slice(3,10).map((user, index) => {
      const initial = user.first_name.normalize().match(/[\p{L}\p{N}]/u)?.[0]?.toUpperCase();
-     return <li key={index} className="ranking-entry" data-place={index + 1}>
-      <span className="ranking-medal">{index === 0 && <Crown size={14} aria-hidden="true"/>}{index + 1}</span>
+     return <li key={index} className="ranking-entry" data-place={index + 4}>
+      <span className="ranking-medal">{index + 4}</span>
       <span className="ranking-avatar" aria-hidden="true">{initial || <UserRound size={20}/>}</span>
       <div className="ranking-person"><strong>{user.first_name}</strong><span>{t('level')} {user.level}</span></div>
       <strong className="ranking-score">{number(user.xp)} <small>XP</small></strong>
      </li>;
     })}
-   </ol> : <p className="ranking-empty">{empty}</p>}
+   </ol> : !leaders.length && <p className="ranking-empty">{empty}</p>}
   </section>;
  }
  function HomePage(){const adventure={uz:'Kosmos seni kutmoqda.',ru:'Космос ждёт тебя.',en:'The cosmos awaits you.'};const salutation={uz:'Salom',ru:'Привет',en:'Hello'};const nickname = data!.user.username?.trim() || data!.user.first_name;return <HomeMotion><h1 className="cosmic-banner"><img src="/coinova-banner.webp" width={2048} height={682} alt="COINOVA · PLAY • EARN • GROW" lang="en" fetchPriority="high"/><span className="banner-wordmark-motion" aria-hidden="true"/><span className="banner-slogan-motion" aria-hidden="true"><span/><span/><span/></span></h1><section className="hero"><div className="stars"/><div className="hero-content"><span className="hero-badge"><Zap size={14}/> {lang==='uz'?'SENING KOSMIK SARGUZASHTING SHU YERDAN BOSHLANADI':lang==='ru'?'ТВОЁ КОСМИЧЕСКОЕ ПРИКЛЮЧЕНИЕ НАЧИНАЕТСЯ ЗДЕСЬ':'YOUR COSMIC ADVENTURE STARTS HERE'}</span><h2><span className="hero-greeting">{salutation[lang]}, <span className="gradient-text">{nickname}!</span></span><span className="hero-adventure">{adventure[lang]}</span></h2><HeroTypewriter key={lang} text={heroQuestion[lang]}/><button className="primary-btn" onClick={()=>changePage('mining')}><Rocket className="hero-launch-icon" size={19} aria-hidden="true"/>{t('startAdventure')}</button><div className="hero-metrics"><span><small>{lang==='uz'?'JAMI TAJRIBA':lang==='ru'?'ВСЕГО ОПЫТА':'TOTAL EXPERIENCE'}</small><strong><span className="hero-stat-number">{number(data!.user.xp)}</span> XP</strong></span><span><small>{lang==='uz'?'HOZIRGI DARAJA':lang==='ru'?'ТЕКУЩИЙ УРОВЕНЬ':'CURRENT LEVEL'}</small><strong><span className="hero-stat-number">{data!.user.level}</span> {t('level')}</strong></span></div></div><Astronaut/><FloatingCoins/><div className="astronaut-label"><Sparkles size={13}/>{lang==='uz'?'Kichik kosmonavt':lang==='ru'?'Маленький космонавт':'Little astronaut'}</div></section><div className="balance-grid">{renderBalance('fc')}{renderBalance('rc')}</div>{renderXP()}<div className="quick-section glass"><div className="quick-top"><div><span className="xp-eyebrow">{lang==='uz'?'TEZKOR KIRISH':lang==='ru'?'БЫСТРЫЙ ДОСТУП':'QUICK ACCESS'}</span><h2>{t('quick')}</h2></div><span className="quick-flare"><Sparkles size={24}/></span></div><div className="quick-grid">{[...extras,['mining',Pickaxe] as const,['bonus',Gift] as const].map(([key,Icon])=><button className="quick glass" key={key} onClick={()=>changePage(key as Page)}><span className="quick-icon"><Icon size={21}/></span><strong>{t(key as TranslationKey)}</strong><ChevronRight size={15} className="muted"/></button>)}</div></div><SectionHeader title={t('achievements')} to="leaderboard"/><Card className="achievement"><span className="trophy-bubble"><Trophy size={25}/></span><div><strong>{t('level')} {data!.user.level}</strong><p className="muted sm">{number(data!.user.xp)} XP · {t('totalReferrals')}: {data!.user.referral_count}</p></div><button className="icon-link" aria-label={t('leaderboard')} onClick={()=>changePage('leaderboard')}><ArrowRight/></button></Card><SectionHeader title={t('recent')} to="wallet"/><Card className="list-card"><Transactions/></Card></HomeMotion>}
