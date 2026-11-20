@@ -514,17 +514,17 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
     <h2>{islandName}</h2>
     <p className="muted sm">{{uz:'Orolni chapga yoki o‘ngga suring',ru:'Листайте остров влево или вправо',en:'Swipe left or right to explore'}[lang]}</p>
     <div className="mining-island-scroll" tabIndex={0} aria-label={islandName}>
-     <div className="mining-island-map">
+     <div className="mining-island-map" style={{width: 230 + Math.ceil(slots.length / 4) * 225}}>
       {slots.map((item, index) => {
-       const row = index % 4;
+       const row = (index + 2) % 4;
        const column = Math.floor(index / 4);
        const id = item?.id ?? 'press';
        const purchased = !item || owned.some(device => device.id === id);
        const label = item?.name ?? pressName;
        const selected = purchased && (item ? islandSelection === id : mainSelected);
-       return <button key={id} type="button" className="mining-island-slot" title={label}
+       return <button key={id} type="button" className="mining-island-slot" data-kind={item?.kind ?? 'press'} title={label}
         aria-label={label} aria-pressed={selected} disabled={!purchased}
-        style={{left: `${6 + column * 7.7 + [0,2.1,-.6,1.1][row]}%`, top: `${[24,40,56,72][row] + (column % 3 - 1) * 1.8}%`}}
+        style={{left: 135 + column * 225 + [12,52,-12,32][row], top: 155 + row * 116 + [0,16,-10,9,24][column % 5]}}
         onClick={()=>setIslandSelection(id)}>
         <span className="mining-island-platform">
          {purchased ? item ? <EquipmentArt item={item}/> : <img src="/cosmic-press.webp" alt=""/> : <ShieldCheck size={17} aria-hidden="true"/>}
