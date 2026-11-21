@@ -1503,8 +1503,8 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 .press-compact-upgrade-row strong, .press-compact-upgrade-row small { display: block; font-size: .75rem; }
 .press-compact-upgrade-row small, .press-compact-upgrade .sm { color: #cbbbd9; font-size: .68rem; }
 
-.mining-island-scene { overflow: hidden; }
-.mining-island-stars, .mining-island-operation {
+.mining-island-scene { overflow: hidden; container-type: inline-size; }
+.mining-island-stars, .mining-island-work {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -1524,38 +1524,11 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 .mining-island-stars i:nth-child(3) { left: 56%; top: 5%; }
 .mining-island-stars i:nth-child(4) { left: 79%; top: 7%; }
 .mining-island-stars i:nth-child(5) { left: 95%; top: 12%; }
-.mining-island-hotspot[data-operating="true"] { --operation-glow: #ffbc56; }
-.mining-island-hotspot[data-district="energy"] { --operation-glow: #ec83ff; }
-.mining-island-hotspot[data-district="storage"] { --operation-glow: #a3e7ff; }
-.mining-island-operation::before {
-  content: "";
-  position: absolute;
-  inset: 19% 16% 4%;
-  border-radius: 50%;
-  background: radial-gradient(ellipse, var(--operation-glow), transparent 68%);
-  opacity: .26;
-}
-.mining-island-operation i {
-  position: absolute;
-  bottom: 24%;
-  left: 45%;
-  width: 4px;
-  height: 6px;
-  border-radius: 50%;
-  background: #fff4dc;
-  box-shadow: 0 0 6px 2px var(--operation-glow);
-  opacity: 0;
-}
-
 @media (prefers-reduced-motion: no-preference) {
   .mining-island-stars { display: block; }
   .mining-island-stars i { animation: island-star-twinkle 5s ease-in-out infinite; }
   .mining-island-stars i:nth-child(2n) { animation-delay: -2.8s; }
   .mining-island-stars i:nth-child(3n) { animation-delay: -1.2s; }
-  .mining-island-operation::before { animation: island-machine-glow 2.4s ease-in-out infinite; }
-  .mining-island-operation i { animation: island-machine-spark 1.9s ease-out infinite; }
-  .mining-island-operation i:nth-child(2) { left: 33%; animation-delay: -.6s; }
-  .mining-island-operation i:nth-child(3) { left: 59%; animation-delay: -1.2s; }
 }
 
 @keyframes island-star-twinkle {
@@ -1563,12 +1536,134 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
   44% { opacity: .88; transform: scale(1); }
   78% { opacity: .16; transform: scale(.65); }
 }
-@keyframes island-machine-glow {
-  0%, 100% { opacity: .16; }
-  50% { opacity: .54; }
+
+.mining-island-hotspot { z-index: 1; }
+.mining-island-work { display: none; }
+.mining-island-part {
+  position: absolute;
+  overflow: hidden;
+  mask-image: radial-gradient(ellipse, #000 45%, transparent 74%);
 }
-@keyframes island-machine-spark {
-  0% { opacity: 0; transform: translateY(0) scale(.65); }
-  24% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-36px) scale(.25); }
+.mining-island-part > span {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+}
+.mining-island-part[data-motion="wheel"],
+.mining-island-part[data-motion="orbit"] {
+  border-radius: 50%;
+  mask-image: radial-gradient(ellipse, #000 60%, transparent 73%);
+}
+.mining-island-part[data-motion="press"] > span { transform-origin: 50% 10%; }
+.mining-island-part[data-motion="scoop"] > span { transform-origin: 38% 24%; }
+.mining-island-part[data-motion="radar"] > span { transform-origin: 52% 78%; }
+
+.mining-island-part:is([data-motion="belt"], [data-motion="chip"], [data-motion="coil"], [data-motion="beam"], [data-motion="plasma"]) {
+  mix-blend-mode: screen;
+}
+.mining-island-part:is([data-motion="belt"], [data-motion="chip"], [data-motion="coil"], [data-motion="beam"], [data-motion="plasma"]) > span {
+  opacity: .72;
+  mask-image: linear-gradient(100deg, transparent 10%, #000 43%, transparent 78%);
+  mask-size: 240% 100%;
+  mask-repeat: no-repeat;
+}
+.mining-island-part[data-motion="plasma"] > span {
+  mask-image: linear-gradient(0deg, transparent 12%, #000 50%, transparent 84%);
+  mask-size: 100% 250%;
+}
+
+.mining-island-material {
+  position: absolute;
+  --ore-light: #ffe2a3;
+  --ore-mid: #ffb33e;
+  --ore-dark: #8d461c;
+}
+.mining-island-material[data-material="blue"] { --ore-light: #e1f9ff; --ore-mid: #46b7ff; --ore-dark: #283ac5; }
+.mining-island-material[data-material="violet"] { --ore-light: #f7cfff; --ore-mid: #d256ff; --ore-dark: #6622aa; }
+.mining-island-material[data-material="green"] { --ore-light: #cffff1; --ore-mid: #34eba5; --ore-dark: #06714d; }
+.mining-island-material > i {
+  position: absolute;
+  width: clamp(4px, 1.1cqw, 16px);
+  height: clamp(4px, .85cqw, 12px);
+  opacity: 0;
+  background: conic-gradient(from 120deg at 42% 43%, var(--ore-dark), var(--ore-mid), var(--ore-light), var(--ore-mid), var(--ore-dark));
+  clip-path: polygon(4% 55%, 30% 12%, 72% 3%, 99% 48%, 77% 94%, 25% 99%);
+}
+.mining-island-material[data-path="cargo"] > i {
+  background: linear-gradient(90deg, transparent 43%, #ffdb80 43% 54%, transparent 54%),
+    linear-gradient(150deg, #ffe7a9 28%, #b7753a 29% 66%, #683624 67%);
+  clip-path: polygon(0 20%, 58% 0, 100% 24%, 100% 83%, 52% 100%, 0 75%);
+}
+.mining-island-material[data-path="press"] > i {
+  background: linear-gradient(130deg, #fff5bd, #ffc451 48%, #ad6818 50%, #ffe197 72%, #d9932a);
+  box-shadow: inset 0 0 0 1px #ffeab6;
+  clip-path: ellipse(46% 46%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mining-island-work { display: block; }
+  .mining-island-part[data-motion="press"] > span { animation: island-press-stroke 2.4s ease-in-out infinite; }
+  .mining-island-part[data-motion="drill"] > span { animation: island-drill-feed 1.65s ease-in-out infinite; }
+  .mining-island-part[data-motion="scoop"] > span { animation: island-scoop-arm 3s ease-in-out infinite; }
+  .mining-island-part[data-motion="radar"] > span { animation: island-radar-sweep 3.3s ease-in-out infinite; }
+  .mining-island-part[data-motion="wheel"] > span { animation: island-wheel-turn 2.8s linear infinite; }
+  .mining-island-part[data-motion="orbit"] > span { animation: island-wheel-turn 5s linear infinite; }
+  .mining-island-part[data-motion="hatch"] > span { animation: island-hatch-lift 3.3s ease-in-out infinite; }
+  .mining-island-part:is([data-motion="belt"], [data-motion="chip"], [data-motion="coil"], [data-motion="beam"]) > span {
+    animation: island-power-travel 1.65s linear infinite;
+  }
+  .mining-island-part[data-motion="plasma"] > span { animation: island-plasma-cycle 1.4s ease-in-out infinite; }
+  .mining-island-material > i { animation: island-material-transfer 2.4s linear infinite; }
+  .mining-island-material > i:nth-child(2) { animation-delay: -.8s; }
+  .mining-island-material > i:nth-child(3) { animation-delay: -1.6s; }
+  .mining-island-material[data-path="dig"] > i { animation: island-material-scoop 3s ease-out infinite; }
+  .mining-island-material[data-path="dig"] > i:nth-child(2) { animation-delay: .12s; }
+  .mining-island-material[data-path="dig"] > i:nth-child(3) { animation-delay: .24s; }
+  .mining-island-material[data-path="cargo"] > i:nth-child(n+2) { display: none; }
+}
+@keyframes island-press-stroke {
+  0%, 18%, 100% { transform: scaleY(1); }
+  47%, 59% { transform: scaleY(1.42); }
+  72% { transform: scaleY(.98); }
+}
+@keyframes island-drill-feed {
+  0%, 100% { transform: translate(0); }
+  40%, 68% { transform: translate(-12%, 13%); }
+  54% { transform: translate(-9%, 16%); }
+}
+@keyframes island-scoop-arm {
+  0%, 100% { transform: rotate(0); }
+  29%, 39% { transform: rotate(16deg) translateY(8%); }
+  67%, 77% { transform: rotate(-13deg) translateY(-9%); }
+}
+@keyframes island-radar-sweep {
+  0%, 100% { transform: rotate(-12deg) scaleX(.9); }
+  50% { transform: rotate(12deg) scaleX(1.12); }
+}
+@keyframes island-wheel-turn { to { transform: rotate(1turn); } }
+@keyframes island-hatch-lift {
+  0%, 18%, 100% { transform: translateY(0); }
+  44%, 72% { transform: translateY(-22%); }
+}
+@keyframes island-power-travel {
+  from { mask-position: 100% 0; }
+  to { mask-position: 0 0; }
+}
+@keyframes island-plasma-cycle {
+  from { mask-position: 0 0; }
+  to { mask-position: 0 100%; }
+}
+@keyframes island-material-transfer {
+  0% { opacity: 0; transform: translate(0) scale(.7); }
+  16%, 73% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--material-x), var(--material-y)) rotate(20deg) scale(.62); }
+}
+@keyframes island-material-scoop {
+  0%, 33% { opacity: 0; transform: translate(0) scale(.8); }
+  42% { opacity: 1; }
+  70% {
+    opacity: 1;
+    transform: translate(calc(var(--material-x) * .7), calc(var(--material-y) - 1.8cqw)) rotate(25deg);
+  }
+  87%, 100% { opacity: 0; transform: translate(var(--material-x), var(--material-y)) rotate(58deg) scale(.65); }
 }
