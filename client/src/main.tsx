@@ -1,6 +1,6 @@
 import { WalletActions, payoutWords, type Payout } from './WalletActions';
 import React,{useEffect,useRef,useState} from 'react';import{createRoot}from'react-dom/client';
-import{Home,Pickaxe,ListChecks,Gift,Wallet,UserRound,ShoppingBag,Coins,Users,Trophy,Bell,ArrowRight,ArrowUpRight,ArrowDownLeft,Copy,Check,Play,HandCoins,CircleStop,Send,Bot,LogOut,Sparkles,Zap,Clock,ShieldCheck,Globe,Rocket,ChevronRight,Orbit,Star,Moon,Gem,Flame,Crown,Camera}from'lucide-react';
+import{Home,Pickaxe,ListChecks,Gift,Wallet,UserRound,ShoppingBag,Coins,Users,Trophy,Bell,ArrowRight,ArrowUpRight,ArrowDownLeft,Copy,Check,Play,HandCoins,CircleStop,Send,Bot,LogOut,Sparkles,Zap,Clock,ShieldCheck,Globe,Rocket,ChevronRight,Orbit,Star,Moon,Gem,Flame,Crown,Camera,Lock}from'lucide-react';
 import{dictionary,type Lang,type TranslationKey}from'./i18n';import './styles.css';
 type Page='home'|'mining'|'tasks'|'bonus'|'wallet'|'exchange'|'withdraw'|'profile'|'shop'|'coin'|'referrals'|'leaderboard'|'admin';
 type User={id:string;profile_id:number;avatar?:string;telegram_id:string|null;username:string;first_name:string;role:string;fc:string;rc:string;xp:string;level:number;referral_count:number;streak:number;last_bonus_day:string|null;created_at:string};
@@ -576,9 +576,11 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
         const label = item?.name ?? pressName;
         const purchased = !item || owned.some(device => device.id === id);
         return <button key={id} type="button" className="mining-island-hotspot"
-         title={label} aria-label={label} disabled={!purchased}
-         aria-haspopup="dialog" style={{left:x+'%',top:y+'%',width:width+'%',height:height+'%'}}
-         onClick={()=>setIslandSelection(id)}/>;
+         title={label} aria-label={purchased ? label : label + ' · ' + {uz:'Qulflangan',ru:'Заблокировано',en:'Locked'}[lang]} disabled={!purchased}
+         aria-haspopup={purchased ? 'dialog' : undefined} style={{left:x+'%',top:y+'%',width:width+'%',height:height+'%'}}
+         onClick={()=>setIslandSelection(id)}>
+         {!purchased && <span className="mining-island-lock" aria-hidden="true"><Lock size={15}/></span>}
+        </button>;
        })}
       </div>)}
      </div>
