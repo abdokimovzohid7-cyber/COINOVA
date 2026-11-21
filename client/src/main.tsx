@@ -551,14 +551,49 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   const capacity = mining?.capacity ?? data!.miningConfig?.mining?.capacity ?? 200;
   const pending = Math.min(capacity, Math.floor(elapsed / (60000 / rate)));
   const owned = (data!.equipment ?? []).filter(item => data!.purchases.some(purchase => purchase.item_id === item.id));
-  const devices = owned.filter(item => item.kind === 'miner' && item.id === islandSelection);
-  const modifiers = owned.filter(item => item.kind !== 'miner' && item.id === islandSelection);
+  const equipment = owned.find(item => item.id === islandSelection);
+  const device = equipment?.kind === 'miner' ? equipment : undefined;
   const equipmentByArt = new Map((data!.equipment ?? []).map(item => [item.art, item]));
   const mainSelected = islandSelection === 'press';
   const pressName = {uz:'Asosiy press',ru:'Основной пресс',en:'Main press'}[lang];
   const islandName = {uz:'Mining oroli',ru:'Остров добычи',en:'Mining island'}[lang];
   const storageLabel = lang === 'uz' ? 'Sig‘im' : lang === 'ru' ? 'Вместимость' : 'Capacity';
-  const unavailable = active ? t('error_mining_upgrade_active') : next && balance < next.price ? t('error_insufficient_fc') : '';
+  const session = device ? data!.deviceMining?.[device.id] : mining;
+  const config = device && data!.miningConfig?.[device.id];
+  const selectedName = mainSelected ? pressName : equipment?.name;
+  const selectedLevel = device ? data!.deviceLevels?.[device.id] ?? 1 : miningLevel;
+  const selectedRate = device ? session?.rate ?? config?.rate ?? device.value : rate;
+  const selectedCapacity = device
+   ? session?.capacity ?? config?.capacity ?? device.value * (60 + (miningLevel - 1) * 15)
+   : capacity;
+  const selectedPending = device
+   ? session ? Math.min(selectedCapacity, Math.floor(Math.max(0, now - Date.parse(session.last_claimed_at)) * selectedRate / 60000)) : 0
+   : pending;
+  const deviceUpgradePrice = device && data!.deviceUpgradePrices?.[selectedLevel];
+  const upgradePrice = device ? deviceUpgradePrice : next?.price;
+  const upgradeCurrency = device ? 'RC' : 'FC';
+  const upgradesBlocked = active || (device && Object.values(data!.deviceMining ?? {}).some(Boolean));
+  const unavailable = upgradesBlocked ? t('error_mining_upgrade_active')
+   : !device && next && balance < next.price ? t('error_insufficient_fc') : '';
+  const modules = [
+   ['Quvvat yadrosi', 'Энергоядро', 'Power core'],
+   ['Himoya qoplamasi', 'Защитный корпус', 'Armor plating'],
+   ['Orbital halqa', 'Орбитальное кольцо', 'Orbital ring'],
+   ['Kristall modul', 'Кристальный модуль', 'Crystal module'],
+   ['Plazma dvigateli', 'Плазменный двигатель', 'Plasma engine'],
+   ['Turbo modul', 'Турбомодуль', 'Turbo module'],
+   ['Kvant modul', 'Квантовый модуль', 'Quantum module'],
+   ['Nova reaktori', 'Реактор Нова', 'Nova reactor'],
+   ['Galaktik yadro', 'Галактическое ядро', 'Galactic core'],
+  ];
+  const moduleLanguage = lang === 'uz' ? 0 : lang === 'ru' ? 1 : 2;
+  const formatRate = (value: number) => new Intl.NumberFormat(lang, {maximumFractionDigits: 1}).format(value);
+  const operate = (operation: 'start' | 'claim' | 'stop') => device
+   ? action(device.id, '/mining/' + device.id + '/' + operation)
+   : action(operation, '/mining/' + operation);
+  const upgrade = () => device
+   ? action('device-upgrade', '/mining/device-upgrade/' + device.id + '/' + (selectedLevel + 1))
+   : action('upgrade', '/mining/upgrade/' + (selectedLevel + 1));
   return <>
    <div className="page-heading"><span className="eyebrow"><Pickaxe size={15}/> {t('mining')}</span><h1>{t('mineTitle')}</h1><p>{t('mineDesc')}</p></div>
    <section className="mining-island">
@@ -586,99 +621,55 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
      </div>
     </div>
    </section>
-   {islandSelection && <dialog className={mainSelected ? "mining-island-dialog press-compact-dialog" : "mining-island-dialog"} aria-label={mainSelected ? pressName : owned.find(item => item.id === islandSelection)?.name}
+   {islandSelection && selectedName && <dialog className="mining-island-dialog press-compact-dialog" aria-label={selectedName}
     ref={element=>{if(element && !element.open) element.showModal()}}
     onClose={()=>setIslandSelection('')} onClick={event=>{if(event.target===event.currentTarget) event.currentTarget.close()}}>
-   <div className="mining-island-dialog-content">
-    <button className="secondary-btn island-dialog-close" aria-label={{uz:'Yopish',ru:'Закрыть',en:'Close'}[lang]}
-     onClick={()=>setIslandSelection('')}>×</button>
-    {errorMessage && <p role="alert">{errorMessage}</p>}
-   <div>
-   {mainSelected && <div className="press-compact">
-    <header className="press-compact-header">
-     <h3>{pressName}</h3>
-     <span>{t('level')} {miningLevel}</span>
-    </header>
-    <div className="press-compact-output">
-     <span className="press-compact-status" data-active={active} role="status"><i aria-hidden="true"/>{t(active ? 'active' : 'inactive')}</span>
-     <strong>+{number(pending)} <small>FC</small></strong>
-    </div>
-    <dl className="press-compact-stats">
-     <div><dt>{t('miningRate')}</dt><dd>{new Intl.NumberFormat(lang, {maximumFractionDigits: 1}).format(rate)} {t('perMinute')}</dd></div>
-     <div><dt>{t('collected')}</dt><dd>{number(mining?.earned_fc||'0')} FC</dd></div>
-     <div><dt>{storageLabel}</dt><dd>{number(capacity)} FC</dd></div>
-    </dl>
-    <div className="mining-buttons">{!active
-     ? <button className="primary-btn" disabled={!!busy} onClick={()=>action('start','/mining/start')}><Play size={18}/>{t('mineStart')}</button>
-     : <>
-      <button className="primary-btn mining-claim" disabled={!!busy || pending < 1} onClick={()=>action('claim','/mining/claim')}>
-       <span className="mining-action-icon"><HandCoins size={20} aria-hidden="true"/></span>{t('claim')}
-      </button>
-      <button className="secondary-btn mining-stop" disabled={!!busy} onClick={()=>action('stop','/mining/stop')}>
-       <span className="mining-action-icon"><CircleStop size={20} aria-hidden="true"/></span>{t('mineStop')}
-      </button>
-     </>}
-    </div>
-   </div>}
-   {devices.map(device => {
-    const deviceLevel = data!.deviceLevels?.[device.id] ?? 1;
-    const upgradePrice = data!.deviceUpgradePrices?.[deviceLevel];
-    const upgradesBlocked = active || Object.values(data!.deviceMining ?? {}).some(Boolean);
-    const modules = [
-     [Zap, 'Quvvat yadrosi', 'Энергоядро', 'Power core'],
-     [ShieldCheck, 'Himoya qoplamasi', 'Защитный корпус', 'Armor plating'],
-     [Orbit, 'Orbital halqa', 'Орбитальное кольцо', 'Orbital ring'],
-     [Gem, 'Kristall modul', 'Кристальный модуль', 'Crystal module'],
-     [Flame, 'Plazma dvigateli', 'Плазменный двигатель', 'Plasma engine'],
-     [Rocket, 'Turbo modul', 'Турбомодуль', 'Turbo module'],
-     [Sparkles, 'Kvant modul', 'Квантовый модуль', 'Quantum module'],
-     [Star, 'Nova reaktori', 'Реактор Нова', 'Nova reactor'],
-     [Crown, 'Galaktik yadro', 'Галактическое ядро', 'Galactic core'],
-    ] as const;
-    const moduleLanguage = lang === 'uz' ? 1 : lang === 'ru' ? 2 : 3;
-    const session = data!.deviceMining?.[device.id];
-    const config = data!.miningConfig?.[device.id];
-    const deviceRate = session?.rate ?? config?.rate ?? device.value;
-    const limit = session?.capacity ?? config?.capacity ?? device.value * (60 + (miningLevel - 1) * 15);
-    const amount = session ? Math.min(limit, Math.floor(Math.max(0, now - Date.parse(session.last_claimed_at)) * deviceRate / 60000)) : 0;
-    const operate = (operation: string) => action(device.id, '/mining/' + device.id + '/' + operation);
-    return <Card className="mining-panel mining-aux" key={device.id}>
-     <h3>{device.name}</h3><p className="muted sm">{t('level')} {deviceLevel}</p>
-     {deviceLevel > 1 && <p className="gold-text sm">{modules[deviceLevel - 2]?.[moduleLanguage]}</p>}
-     <p className="muted sm">{number(deviceRate)} {t('perMinute')} · {storageLabel} {number(limit)} FC</p>
-     <strong className="gold-text">+{number(amount)} FC</strong>
-     <div className="mining-buttons">{session ? <>
-      <button className="primary-btn" disabled={!!busy || amount < 1} onClick={()=>operate('claim')}>{t('claim')}</button>
-      <button className="secondary-btn" disabled={!!busy} onClick={()=>operate('stop')}>{t('mineStop')}</button>
-     </> : <button className="primary-btn" disabled={!!busy} onClick={()=>operate('start')}>{t('mineStart')}</button>}</div>
-     {upgradePrice !== undefined && <div className="device-upgrade-action">
-      <p className="muted sm">{t('level')} {deviceLevel + 1} · {modules[deviceLevel - 1]?.[moduleLanguage]}</p>
-      <button className="secondary-btn" disabled={!!busy || upgradesBlocked || Number(user.rc) < upgradePrice}
-       onClick={()=>action('device-upgrade', '/mining/device-upgrade/' + device.id + '/' + (deviceLevel + 1))}>
-       <Zap size={15} aria-hidden="true"/>{number(upgradePrice)} RC
-      </button>
-      {upgradesBlocked && <p className="muted sm">{t('error_mining_upgrade_active')}</p>}
+    <div className="mining-island-dialog-content">
+     <button className="secondary-btn island-dialog-close" aria-label={{uz:'Yopish',ru:'Закрыть',en:'Close'}[lang]}
+      onClick={()=>setIslandSelection('')}>×</button>
+     {errorMessage && <p role="alert">{errorMessage}</p>}
+     <header className="press-compact-header">
+      <h3>{selectedName}</h3>
+      {(mainSelected || device) && <span>{t('level')} {selectedLevel}
+       {device && selectedLevel > 1 && ' · ' + modules[selectedLevel - 2]?.[moduleLanguage]}
+      </span>}
+     </header>
+     {mainSelected || device ? <>
+      <div className="press-compact-output">
+       <span className="press-compact-status" data-active={!!session} role="status"><i aria-hidden="true"/>{t(session ? 'active' : 'inactive')}</span>
+       <strong>+{number(selectedPending)} <small>FC</small></strong>
+      </div>
+      <dl className="press-compact-stats">
+       <div><dt>{t('miningRate')}</dt><dd>{formatRate(selectedRate)} {t('perMinute')}</dd></div>
+       <div><dt>{t('collected')}</dt><dd>{number(session?.earned_fc ?? 0)} FC</dd></div>
+       <div><dt>{storageLabel}</dt><dd>{number(selectedCapacity)} FC</dd></div>
+      </dl>
+      <div className="mining-buttons">{session ? <>
+       <button className="primary-btn mining-claim" disabled={!!busy || selectedPending < 1} onClick={()=>operate('claim')}>
+        <span className="mining-action-icon"><HandCoins size={20} aria-hidden="true"/></span>{t('claim')}
+       </button>
+       <button className="secondary-btn mining-stop" disabled={!!busy} onClick={()=>operate('stop')}>
+        <span className="mining-action-icon"><CircleStop size={20} aria-hidden="true"/></span>{t('mineStop')}
+       </button>
+      </> : <button className="primary-btn" disabled={!!busy} onClick={()=>operate('start')}><Play size={18} aria-hidden="true"/>{t('mineStart')}</button>}</div>
+      {upgradePrice !== undefined ? <section className="press-compact-upgrade" aria-label={t('mining_upgrade')}>
+       <div className="press-compact-upgrade-row">
+        <div><strong>{t('level')} {selectedLevel + 1}</strong><small>
+         {device ? modules[selectedLevel - 1]?.[moduleLanguage] : next && formatRate(next.rate) + ' ' + t('perMinute')}
+        </small></div>
+        <button className="primary-btn" disabled={!!busy || !!unavailable || (device ? Number(user.rc) < upgradePrice : false)} onClick={upgrade}>
+         {t('upgradePress')} · {number(upgradePrice)} {upgradeCurrency}
+        </button>
+       </div>
+       {unavailable && <p className="muted sm">{unavailable}</p>}
+      </section> : (device ? selectedLevel === 10 : miningLevels.length > 0) &&
+       <section className="press-compact-upgrade"><p className="gold-text">{device ? <><Trophy size={15}/> {t('level')} 10</> : t('maxPress')}</p></section>}
+     </> : equipment && <div className="press-compact-output">
+      <span className="press-compact-status">{equipment.kind === 'boost' ? t('miningRate') : storageLabel}</span>
+      <strong>+{number(equipment.value)} <small>{equipment.kind === 'boost' ? '%' : 'FC'}</small></strong>
      </div>}
-     {deviceLevel === 10 && <p className="gold-text sm"><Trophy size={15}/> {t('level')} 10</p>}
-    </Card>;
-   })}
-   </div>
-   {modifiers.length > 0 && <div className="mining-modifiers">{modifiers.map(item =>
-    <Card className="mining-modifier" key={item.id}><div><strong>{item.name}</strong>
-     <div className="gold-text">+{number(item.value)}{item.kind === 'boost' ? '%' : ' FC'}</div></div></Card>
-   )}</div>}
-   {mainSelected && miningLevels.length > 0 && <section className="press-compact-upgrade" aria-label={t('mining_upgrade')}>
-    {next ? <>
-     <div className="press-compact-upgrade-row">
-      <div><strong>{t('level')} {miningLevel + 1}</strong><small>{next.rate} {t('perMinute')}</small></div>
-      <button className="primary-btn" disabled={!!busy || !!unavailable} onClick={()=>action('upgrade', '/mining/upgrade/' + (miningLevel + 1))}>
-       {t('upgradePress')} · {number(next.price)} FC
-      </button>
-     </div>
-     {unavailable && <p className="muted sm">{unavailable}</p>}
-    </> : <p className="gold-text">{t('maxPress')}</p>}
-   </section>}
-   </div></dialog>}
+    </div>
+   </dialog>}
    <button className="secondary-btn" onClick={()=>changePage('shop')}>{t('shop')} · {storageLabel}</button>
    <details className="mining-history">
     <summary className="glass"><Clock size={20} aria-hidden="true"/><span>{t('miningHistory')}</span><ChevronRight size={18} className="history-chevron" aria-hidden="true"/></summary>
