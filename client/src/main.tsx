@@ -586,7 +586,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
      </div>
     </div>
    </section>
-   {islandSelection && <dialog className="mining-island-dialog" aria-label={mainSelected ? pressName : owned.find(item => item.id === islandSelection)?.name}
+   {islandSelection && <dialog className={mainSelected ? "mining-island-dialog press-compact-dialog" : "mining-island-dialog"} aria-label={mainSelected ? pressName : owned.find(item => item.id === islandSelection)?.name}
     ref={element=>{if(element && !element.open) element.showModal()}}
     onClose={()=>setIslandSelection('')} onClick={event=>{if(event.target===event.currentTarget) event.currentTarget.close()}}>
    <div className="mining-island-dialog-content">
@@ -594,17 +594,20 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
      onClick={()=>setIslandSelection('')}>×</button>
     {errorMessage && <p role="alert">{errorMessage}</p>}
    <div>
-   {mainSelected && <Card className="mining-panel">
-    <h3>{pressName}</h3><p className="muted sm">{t('level')} {miningLevel}</p>
-    <div role="status" className={active ? 'mining-live' : 'status'}>
-     {active ? <><span className="mining-live-icon"><Zap size={15} aria-hidden="true"/></span>{t('active')}<span className="mining-signal" aria-hidden="true"><i/><i/><i/></span></>
-      : <><span className="pulse-dot"/>{t('inactive')}</>}
+   {mainSelected && <div className="press-compact">
+    <header className="press-compact-header">
+     <h3>{pressName}</h3>
+     <span>{t('level')} {miningLevel}</span>
+    </header>
+    <div className="press-compact-output">
+     <span className="press-compact-status" data-active={active} role="status"><i aria-hidden="true"/>{t(active ? 'active' : 'inactive')}</span>
+     <strong>+{number(pending)} <small>FC</small></strong>
     </div>
-    <h2 className={'mining-pending' + (active ? ' mining-pending-live' : '')}>
-     <strong key={pending} className="mining-count">+{number(pending)}</strong> <span>FC</span>
-    </h2>
-    <div className="mining-stats"><div><span className="muted sm">{t('miningRate')}</span><strong>{rate} {t('perMinute')}</strong></div><div><span className="muted sm">{t('collected')}</span><strong>{number(mining?.earned_fc||'0')} FC</strong></div></div>
-    <p className="muted sm">{storageLabel} · {number(capacity)} FC</p>
+    <dl className="press-compact-stats">
+     <div><dt>{t('miningRate')}</dt><dd>{new Intl.NumberFormat(lang, {maximumFractionDigits: 1}).format(rate)} {t('perMinute')}</dd></div>
+     <div><dt>{t('collected')}</dt><dd>{number(mining?.earned_fc||'0')} FC</dd></div>
+     <div><dt>{storageLabel}</dt><dd>{number(capacity)} FC</dd></div>
+    </dl>
     <div className="mining-buttons">{!active
      ? <button className="primary-btn" disabled={!!busy} onClick={()=>action('start','/mining/start')}><Play size={18}/>{t('mineStart')}</button>
      : <>
@@ -616,7 +619,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
       </button>
      </>}
     </div>
-   </Card>}
+   </div>}
    {devices.map(device => {
     const deviceLevel = data!.deviceLevels?.[device.id] ?? 1;
     const upgradePrice = data!.deviceUpgradePrices?.[deviceLevel];
@@ -664,25 +667,17 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
     <Card className="mining-modifier" key={item.id}><div><strong>{item.name}</strong>
      <div className="gold-text">+{number(item.value)}{item.kind === 'boost' ? '%' : ' FC'}</div></div></Card>
    )}</div>}
-   {mainSelected && miningLevels.length > 0 && <>
-    <SectionHeader title={t('mining_upgrade')}/>
-    <Card className="press-upgrades">
-     <div className="press-upgrade-head"><strong>{t('balanceFC')}</strong><span className="gold-text">{number(balance)} FC</span></div>
-     {next ? <>
-      <div className="press-next">
-       <span className="press-step"><Zap size={17} aria-hidden="true"/></span>
-       <span><strong>{t('level')} {miningLevel + 1}</strong><small>{next.rate} {t('perMinute')}</small></span>
-       <strong className="press-price">{number(next.price)} FC</strong>
-      </div>
-      <div className="press-upgrade-action">
-       <button className="primary-btn" disabled={!!busy || !!unavailable} onClick={()=>action('upgrade', '/mining/upgrade/' + (miningLevel + 1))}>
-        <Zap size={17} aria-hidden="true"/>{t('upgradePress')}
-       </button>
-       {unavailable && <p className="muted sm">{unavailable}</p>}
-      </div>
-     </> : <p className="press-upgrade-action gold-text"><Trophy size={18}/> {t('maxPress')}</p>}
-    </Card>
-   </>}
+   {mainSelected && miningLevels.length > 0 && <section className="press-compact-upgrade" aria-label={t('mining_upgrade')}>
+    {next ? <>
+     <div className="press-compact-upgrade-row">
+      <div><strong>{t('level')} {miningLevel + 1}</strong><small>{next.rate} {t('perMinute')}</small></div>
+      <button className="primary-btn" disabled={!!busy || !!unavailable} onClick={()=>action('upgrade', '/mining/upgrade/' + (miningLevel + 1))}>
+       {t('upgradePress')} · {number(next.price)} FC
+      </button>
+     </div>
+     {unavailable && <p className="muted sm">{unavailable}</p>}
+    </> : <p className="gold-text">{t('maxPress')}</p>}
+   </section>}
    </div></dialog>}
    <button className="secondary-btn" onClick={()=>changePage('shop')}>{t('shop')} · {storageLabel}</button>
    <details className="mining-history">
