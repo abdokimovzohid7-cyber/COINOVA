@@ -604,16 +604,20 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
       {islandScenes.map(({name, spots}, index) => <div className="mining-island-scene" key={name}>
        <img src={'/mining-island-' + name + '.webp'} alt="" width={1440} height={960}
         draggable={false} loading={index===0 ? 'eager' : 'lazy'} decoding="async"/>
+       <div className="mining-island-stars" aria-hidden="true"><i/><i/><i/><i/><i/></div>
        {spots.map(({art,x,y,width,height}) => {
         const item = equipmentByArt.get(art);
         if (art !== -1 && !item) return null;
         const id = item?.id ?? 'press';
         const label = item?.name ?? pressName;
         const purchased = !item || owned.some(device => device.id === id);
+        const operating = purchased && (item ? !!data!.deviceMining?.[id] : active);
         return <button key={id} type="button" className="mining-island-hotspot"
+         data-operating={operating} data-district={name}
          title={label} aria-label={purchased ? label : label + ' · ' + {uz:'Qulflangan',ru:'Заблокировано',en:'Locked'}[lang]} disabled={!purchased}
          aria-haspopup={purchased ? 'dialog' : undefined} style={{left:x+'%',top:y+'%',width:width+'%',height:height+'%'}}
          onClick={()=>setIslandSelection(id)}>
+         {operating && <span className="mining-island-operation" aria-hidden="true"><i/><i/><i/></span>}
          {!purchased && <span className="mining-island-lock" aria-hidden="true"><Lock size={15}/></span>}
         </button>;
        })}
