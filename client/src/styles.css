@@ -1437,7 +1437,22 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
   padding: 0;
   cursor: pointer;
 }
-.mining-island-hotspot:disabled { cursor: default; }
+.mining-island-hotspot:disabled { cursor: default; opacity: 1; pointer-events: none; }
+.mining-island-lock {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  transform: translateX(-50%);
+  width: 29px;
+  height: 29px;
+  border-radius: 50%;
+  border: 1px solid #f1bd68;
+  background: #201233f5;
+  color: #ffdb96;
+  box-shadow: 0 2px 8px #090512b3;
+}
 .mining-island-hotspot:focus-visible { outline: 2px solid #ffda8a; outline-offset: -2px; }
 
 .mining-island-dialog { width: min(360px, calc(100vw - 32px)); max-height: 75dvh; padding: 0; border: 1px solid #77459d; border-radius: 19px; background: #1a1029; color: #fff1df; }
