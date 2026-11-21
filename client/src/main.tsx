@@ -327,6 +327,89 @@ function LanguagePicker({ lang, label, open, onToggle, onClose, onSelect }: {
  </div>;
 }
 
+type IslandMotion = 'press' | 'drill' | 'plasma' | 'wheel' | 'belt' | 'scoop' | 'radar' | 'orbit' | 'chip' | 'coil' | 'beam' | 'hatch';
+type IslandPart = [
+ motion: IslandMotion,
+ crop: [left: number, top: number, width: number, height: number],
+ material?: [left: number, top: number, endX: number, endY: number, color: string, path: 'dig' | 'belt' | 'cargo' | 'press'],
+];
+
+// Parts are aligned to the original 1440 × 960 district illustrations.
+const islandParts: Partial<Record<number, IslandPart>> = {
+ 0: ["drill", [368, 173, 97, 83], [380, 244, 350, 259, "blue", "dig"]],
+ 1: ["plasma", [583, 152, 52, 70]],
+ 2: ["wheel", [711, 151, 91, 91], [749, 218, 828, 171, "violet", "belt"]],
+ 3: ["plasma", [995, 143, 76, 71]],
+ 4: ["belt", [1144, 173, 113, 69], [1152, 234, 1245, 188, "violet", "belt"]],
+ 5: ["scoop", [427, 319, 100, 102], [505, 407, 452, 348, "violet", "dig"]],
+ 6: ["radar", [551, 301, 76, 56]],
+ 7: ["press", [805, 342, 55, 106], [829, 433, 870, 450, "violet", "dig"]],
+ 8: ["orbit", [1003, 347, 67, 67]],
+ 9: ["belt", [1204, 397, 118, 64], [1294, 409, 1220, 446, "gold", "belt"]],
+ 10: ["chip", [200, 140, 111, 63]],
+ 11: ["coil", [433, 136, 119, 80]],
+ 12: ["beam", [632, 150, 89, 58]],
+ 13: ["coil", [880, 139, 161, 74]],
+ 14: ["orbit", [1173, 144, 87, 87]],
+ 15: ["orbit", [199, 329, 73, 73]],
+ 16: ["orbit", [430, 308, 83, 83]],
+ 17: ["chip", [646, 319, 126, 91]],
+ 18: ["plasma", [900, 296, 68, 87]],
+ 19: ["beam", [1096, 333, 184, 52]],
+ 20: ["orbit", [256, 167, 73, 73]],
+ 21: ["belt", [465, 148, 97, 74], [502, 172, 508, 214, "violet", "cargo"]],
+ 22: ["hatch", [680, 168, 117, 86]],
+ 23: ["plasma", [924, 144, 86, 83]],
+ 24: ["wheel", [1134, 181, 65, 65]],
+ 25: ["hatch", [194, 395, 74, 68], [225, 445, 226, 418, "gold", "cargo"]],
+ 26: ["orbit", [428, 330, 94, 94]],
+ 27: ["orbit", [715, 377, 66, 66]],
+ 28: ["orbit", [917, 307, 96, 96]],
+ 29: ["scoop", [1358, 349, 43, 73], [1382, 409, 1306, 423, "gold", "cargo"]],
+ 30: ["press", [314, 548, 61, 92], [344, 629, 383, 657, "blue", "dig"]],
+ 31: ["scoop", [480, 525, 115, 103], [509, 619, 595, 566, "green", "dig"]],
+ 32: ["scoop", [805, 548, 75, 86], [860, 610, 809, 635, "gold", "dig"]],
+ 33: ["radar", [970, 536, 89, 69], [935, 613, 1008, 593, "gold", "belt"]],
+ 34: ["orbit", [1216, 517, 96, 98]],
+ 35: ["chip", [128, 527, 137, 74]],
+ 36: ["wheel", [441, 514, 102, 102]],
+ 37: ["coil", [697, 543, 117, 65]],
+ 38: ["orbit", [965, 523, 76, 86]],
+ 39: ["beam", [1311, 548, 101, 76]],
+ 40: ["orbit", [138, 555, 73, 83]],
+ 41: ["plasma", [372, 580, 116, 75]],
+ 42: ["wheel", [679, 540, 99, 99]],
+ 43: ["hatch", [980, 607, 81, 64], [1015, 647, 1040, 626, "violet", "cargo"]],
+ 44: ["scoop", [1222, 581, 91, 73], [1266, 628, 1266, 590, "gold", "cargo"]],
+ [-1]: ["press", [120, 342, 79, 60], [151, 395, 236, 410, "gold", "press"]],
+};
+
+function IslandWork({ art, image }: { art: number; image: string }) {
+ const part = islandParts[art];
+ if (!part) return null;
+ const [motion, [left, top, width, height], material] = part;
+ const artwork = {
+  backgroundImage: `url(${image})`,
+  backgroundSize: `${144000 / width}% ${96000 / height}%`,
+  backgroundPosition: `${left / (1440 - width) * 100}% ${top / (960 - height) * 100}%`,
+ };
+ return <span className="mining-island-work" aria-hidden="true">
+  <span className="mining-island-part" data-motion={motion} style={{
+   left: `${left / 14.4}%`, top: `${top / 9.6}%`, width: `${width / 14.4}%`, height: `${height / 9.6}%`,
+  }}><span style={artwork}/></span>
+  {material && <IslandMaterial material={material}/>}
+ </span>;
+}
+
+function IslandMaterial({ material }: { material: NonNullable<IslandPart[2]> }) {
+ const [left, top, endX, endY, color, path] = material;
+ return <span className="mining-island-material" data-material={color} data-path={path} style={{
+  left: `${left / 14.4}%`, top: `${top / 9.6}%`,
+  '--material-x': `${(endX - left) / 14.4}cqw`,
+  '--material-y': `${(endY - top) / 14.4}cqw`,
+ } as React.CSSProperties}><i/><i/><i/></span>;
+}
+
 function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(localStorage.getItem('coinova-lang')||'')?localStorage.getItem('coinova-lang') as Lang:'uz'));const t=(key:TranslationKey)=>dictionary[lang][key];const [page,setPage]=useState<Page>('home');const[loading,setLoading]=useState(true);const[data,setData]=useState<State|null>(null);const[busy,setBusy]=useState('');const[error,setError]=useState('');const[notifs,setNotifs]=useState(false);const[languageOpen,setLanguageOpen]=useState(false);const[copied,setCopied]=useState(false);const[now,setNow]=useState(Date.now());
  const [openedChannels,setOpenedChannels]=useState<Record<string,boolean>>({});
  const [channelResults,setChannelResults]=useState<Record<string,{error?:string;fc?:number}>>({});
@@ -544,6 +627,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
  function MiningPage(){
   const { mining, miningHistory, user, miningLevel = 1, miningLevels = [] } = data!;
   const active = !!mining;
+  const anyMining = active || Object.values(data!.deviceMining ?? {}).some(Boolean);
   const rate = Math.min(1000, mining?.rate ?? data!.miningConfig?.mining?.rate ?? miningLevels[miningLevel - 1]?.rate ?? 12);
   const next = miningLevels[miningLevel];
   const balance = Number(user.fc);
@@ -611,15 +695,16 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
         const id = item?.id ?? 'press';
         const label = item?.name ?? pressName;
         const purchased = !item || owned.some(device => device.id === id);
-        const operating = purchased && (item ? !!data!.deviceMining?.[id] : active);
-        return <button key={id} type="button" className="mining-island-hotspot"
-         data-operating={operating} data-district={name}
+        const operating = purchased && (!item ? active : item.kind === 'miner' ? !!data!.deviceMining?.[id] : anyMining);
+        return <React.Fragment key={id}>
+         {operating && <IslandWork art={art} image={'/mining-island-' + name + '.webp'}/>}
+         <button type="button" className="mining-island-hotspot"
          title={label} aria-label={purchased ? label : label + ' · ' + {uz:'Qulflangan',ru:'Заблокировано',en:'Locked'}[lang]} disabled={!purchased}
          aria-haspopup={purchased ? 'dialog' : undefined} style={{left:x+'%',top:y+'%',width:width+'%',height:height+'%'}}
          onClick={()=>setIslandSelection(id)}>
-         {operating && <span className="mining-island-operation" aria-hidden="true"><i/><i/><i/></span>}
          {!purchased && <span className="mining-island-lock" aria-hidden="true"><Lock size={15}/></span>}
-        </button>;
+         </button>
+        </React.Fragment>;
        })}
       </div>)}
      </div>
