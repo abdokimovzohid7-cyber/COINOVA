@@ -1,4 +1,3 @@
-import { IslandModel } from './IslandModel';
 import { WalletActions, payoutWords, type Payout } from './WalletActions';
 import React,{useEffect,useRef,useState} from 'react';import{createRoot}from'react-dom/client';
 import{Home,Pickaxe,ListChecks,Gift,Wallet,UserRound,ShoppingBag,Coins,Users,Trophy,Bell,ArrowRight,ArrowUpRight,ArrowDownLeft,Copy,Check,Play,HandCoins,CircleStop,Send,Bot,LogOut,Sparkles,Zap,Clock,ShieldCheck,Globe,Rocket,ChevronRight,Orbit,Star,Moon,Gem,Flame,Crown,Camera}from'lucide-react';
@@ -487,6 +486,60 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   </section>;
  }
  function HomePage(){const adventure={uz:'Kosmos seni kutmoqda.',ru:'Космос ждёт тебя.',en:'The cosmos awaits you.'};const salutation={uz:'Salom',ru:'Привет',en:'Hello'};const nickname = data!.user.username?.trim() || data!.user.first_name;return <HomeMotion><h1 className="cosmic-banner"><img src="/coinova-banner.webp" width={2048} height={682} alt="COINOVA · PLAY • EARN • GROW" lang="en" fetchPriority="high"/><span className="banner-wordmark-motion" aria-hidden="true"/><span className="banner-slogan-motion" aria-hidden="true"><span/><span/><span/></span></h1><section className="hero"><div className="stars"/><div className="hero-content"><span className="hero-badge"><Zap size={14}/> {lang==='uz'?'SENING KOSMIK SARGUZASHTING SHU YERDAN BOSHLANADI':lang==='ru'?'ТВОЁ КОСМИЧЕСКОЕ ПРИКЛЮЧЕНИЕ НАЧИНАЕТСЯ ЗДЕСЬ':'YOUR COSMIC ADVENTURE STARTS HERE'}</span><h2><span className="hero-greeting">{salutation[lang]}, <span className="gradient-text">{nickname}!</span></span><span className="hero-adventure">{adventure[lang]}</span></h2><HeroTypewriter key={lang} text={heroQuestion[lang]}/><button className="primary-btn" onClick={()=>changePage('mining')}><Rocket className="hero-launch-icon" size={19} aria-hidden="true"/>{t('startAdventure')}</button><div className="hero-metrics"><span><small>{lang==='uz'?'JAMI TAJRIBA':lang==='ru'?'ВСЕГО ОПЫТА':'TOTAL EXPERIENCE'}</small><strong><span className="hero-stat-number">{number(data!.user.xp)}</span> XP</strong></span><span><small>{lang==='uz'?'HOZIRGI DARAJA':lang==='ru'?'ТЕКУЩИЙ УРОВЕНЬ':'CURRENT LEVEL'}</small><strong><span className="hero-stat-number">{data!.user.level}</span> {t('level')}</strong></span></div></div><Astronaut/><FloatingCoins/><div className="astronaut-label"><Sparkles size={13}/>{lang==='uz'?'Kichik kosmonavt':lang==='ru'?'Маленький космонавт':'Little astronaut'}</div></section><div className="balance-grid">{renderBalance('fc')}{renderBalance('rc')}</div>{renderXP()}<div className="quick-section glass"><div className="quick-top"><div><span className="xp-eyebrow">{lang==='uz'?'TEZKOR KIRISH':lang==='ru'?'БЫСТРЫЙ ДОСТУП':'QUICK ACCESS'}</span><h2>{t('quick')}</h2></div><span className="quick-flare"><Sparkles size={24}/></span></div><div className="quick-grid">{[...extras,['mining',Pickaxe] as const,['bonus',Gift] as const].map(([key,Icon])=><button className="quick glass" key={key} onClick={()=>changePage(key as Page)}><span className="quick-icon"><Icon size={21}/></span><strong>{t(key as TranslationKey)}</strong><ChevronRight size={15} className="muted"/></button>)}</div></div><SectionHeader title={t('achievements')} to="leaderboard"/><Card className="achievement"><span className="trophy-bubble"><Trophy size={25}/></span><div><strong>{t('level')} {data!.user.level}</strong><p className="muted sm">{number(data!.user.xp)} XP · {t('totalReferrals')}: {data!.user.referral_count}</p></div><button className="icon-link" aria-label={t('leaderboard')} onClick={()=>changePage('leaderboard')}><ArrowRight/></button></Card></HomeMotion>}
+ const islandScenes = [
+ { name: 'quarry', spots: [
+  { art: -1, x: 11, y: 41, width: 20, height: 26 },
+  { art: 0, x: 30, y: 22, width: 12, height: 15 },
+  { art: 1, x: 43, y: 19, width: 10, height: 17 },
+  { art: 2, x: 56, y: 20, width: 15, height: 16 },
+  { art: 3, x: 72, y: 20, width: 11, height: 17 },
+  { art: 4, x: 88, y: 21, width: 17, height: 16 },
+  { art: 5, x: 30, y: 40, width: 13, height: 16 },
+  { art: 6, x: 44, y: 39, width: 13, height: 16 },
+  { art: 7, x: 58, y: 40, width: 12, height: 16 },
+  { art: 8, x: 72, y: 40, width: 13, height: 16 },
+  { art: 9, x: 89, y: 41, width: 16, height: 17 },
+  { art: 30, x: 24, y: 62, width: 15, height: 20 },
+  { art: 31, x: 40, y: 63, width: 15, height: 18 },
+  { art: 32, x: 55, y: 63, width: 15, height: 18 },
+  { art: 33, x: 72, y: 63, width: 15, height: 18 },
+  { art: 34, x: 88, y: 62, width: 15, height: 20 },
+ ] },
+ { name: 'energy', spots: [
+  { art: 10, x: 18, y: 19, width: 15, height: 17 },
+  { art: 11, x: 34, y: 18, width: 15, height: 17 },
+  { art: 12, x: 50, y: 19, width: 15, height: 17 },
+  { art: 13, x: 67, y: 19, width: 15, height: 17 },
+  { art: 14, x: 84, y: 19, width: 15, height: 17 },
+  { art: 15, x: 16, y: 39, width: 15, height: 17 },
+  { art: 16, x: 33, y: 38, width: 15, height: 17 },
+  { art: 17, x: 49, y: 39, width: 15, height: 17 },
+  { art: 18, x: 65, y: 39, width: 15, height: 17 },
+  { art: 19, x: 85, y: 39, width: 15, height: 17 },
+  { art: 35, x: 14, y: 62, width: 15, height: 17 },
+  { art: 36, x: 32, y: 61, width: 15, height: 17 },
+  { art: 37, x: 50, y: 62, width: 15, height: 17 },
+  { art: 38, x: 68, y: 61, width: 15, height: 17 },
+  { art: 39, x: 87, y: 61, width: 15, height: 17 },
+ ] },
+ { name: 'storage', spots: [
+  { art: 20, x: 19, y: 22, width: 15, height: 17 },
+  { art: 21, x: 36, y: 23, width: 15, height: 17 },
+  { art: 22, x: 51, y: 22, width: 15, height: 17 },
+  { art: 23, x: 67, y: 20, width: 15, height: 17 },
+  { art: 24, x: 83, y: 22, width: 15, height: 17 },
+  { art: 25, x: 14, y: 41, width: 15, height: 17 },
+  { art: 26, x: 33, y: 41, width: 15, height: 17 },
+  { art: 27, x: 50, y: 42, width: 15, height: 17 },
+  { art: 28, x: 66, y: 41, width: 15, height: 17 },
+  { art: 29, x: 85, y: 41, width: 15, height: 17 },
+  { art: 40, x: 12, y: 62, width: 15, height: 17 },
+  { art: 41, x: 32, y: 63, width: 15, height: 17 },
+  { art: 42, x: 50, y: 63, width: 15, height: 17 },
+  { art: 43, x: 70, y: 63, width: 15, height: 17 },
+  { art: 44, x: 88, y: 62, width: 15, height: 17 },
+ ] },
+];
  const [islandSelection, setIslandSelection] = useState('');
  function MiningPage(){
   const { mining, miningHistory, user, miningLevel = 1, miningLevels = [] } = data!;
@@ -500,11 +553,10 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   const owned = (data!.equipment ?? []).filter(item => data!.purchases.some(purchase => purchase.item_id === item.id));
   const devices = owned.filter(item => item.kind === 'miner' && item.id === islandSelection);
   const modifiers = owned.filter(item => item.kind !== 'miner' && item.id === islandSelection);
-  const catalogue = [...(data!.equipment ?? [])].sort((a,b) => a.art - b.art);
+  const equipmentByArt = new Map((data!.equipment ?? []).map(item => [item.art, item]));
   const mainSelected = islandSelection === 'press';
   const pressName = {uz:'Asosiy press',ru:'Основной пресс',en:'Main press'}[lang];
   const islandName = {uz:'Mining oroli',ru:'Остров добычи',en:'Mining island'}[lang];
-  const slots = [null, ...catalogue];
   const storageLabel = lang === 'uz' ? 'Sig‘im' : lang === 'ru' ? 'Вместимость' : 'Capacity';
   const unavailable = active ? t('error_mining_upgrade_active') : next && balance < next.price ? t('error_insufficient_fc') : '';
   return <>
@@ -513,24 +565,22 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
     <h2>{islandName}</h2>
     <p className="muted sm">{{uz:'Orolni chapga yoki o‘ngga suring',ru:'Листайте остров влево или вправо',en:'Swipe left or right to explore'}[lang]}</p>
     <div className="mining-island-scroll" tabIndex={0} aria-label={islandName}>
-     <div className="mining-island-map" style={{width: 230 + Math.ceil(slots.length / 4) * 225}}>
-      {slots.map((item, index) => {
-       const row = (index + 2) % 4;
-       const column = Math.floor(index / 4);
-       const id = item?.id ?? 'press';
-       const purchased = !item || owned.some(device => device.id === id);
-       const label = item?.name ?? pressName;
-       const selected = purchased && (item ? islandSelection === id : mainSelected);
-       return <button key={id} type="button" className="mining-island-slot" data-kind={item?.kind ?? 'press'} title={label}
-        aria-label={label} aria-pressed={selected} disabled={!purchased}
-        style={{left: 135 + column * 225 + [12,52,-12,32][row], top: 155 + row * 116 + [0,16,-10,9,24][column % 5]}}
-        onClick={()=>setIslandSelection(id)}>
-        <span className="mining-island-platform">
-         {purchased ? <IslandModel kind={item?.kind ?? 'press'} art={item?.art ?? -1}/> : <ShieldCheck size={17} aria-hidden="true"/>}
-        </span>
-        <span className="mining-island-label">{label}</span>
-       </button>;
-      })}
+     <div className="mining-island-scenes">
+      {islandScenes.map(({name, spots}, index) => <div className="mining-island-scene" key={name}>
+       <img src={'/mining-island-' + name + '.webp'} alt="" width={1440} height={960}
+        draggable={false} loading={index===0 ? 'eager' : 'lazy'} decoding="async"/>
+       {spots.map(({art,x,y,width,height}) => {
+        const item = equipmentByArt.get(art);
+        if (art !== -1 && !item) return null;
+        const id = item?.id ?? 'press';
+        const label = item?.name ?? pressName;
+        const purchased = !item || owned.some(device => device.id === id);
+        return <button key={id} type="button" className="mining-island-hotspot"
+         title={label} aria-label={label} disabled={!purchased}
+         aria-haspopup="dialog" style={{left:x+'%',top:y+'%',width:width+'%',height:height+'%'}}
+         onClick={()=>setIslandSelection(id)}/>;
+       })}
+      </div>)}
      </div>
     </div>
    </section>
