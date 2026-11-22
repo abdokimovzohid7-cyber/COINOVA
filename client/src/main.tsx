@@ -1,3 +1,4 @@
+import { IslandMechanism } from './IslandMechanism';
 import { WalletActions, payoutWords, type Payout } from './WalletActions';
 import React,{useEffect,useRef,useState} from 'react';import{createRoot}from'react-dom/client';
 import{Home,Pickaxe,ListChecks,Gift,Wallet,UserRound,ShoppingBag,Coins,Users,Trophy,Bell,ArrowRight,ArrowUpRight,ArrowDownLeft,Copy,Check,Play,HandCoins,CircleStop,Send,Bot,LogOut,Sparkles,Zap,Clock,ShieldCheck,Globe,Rocket,ChevronRight,Orbit,Star,Moon,Gem,Flame,Crown,Camera,Lock}from'lucide-react';
@@ -393,11 +394,12 @@ function IslandWork({ art, image, operating }: { art: number; image: string; ope
   backgroundSize: `${144000 / width}% ${96000 / height}%`,
   backgroundPosition: `${left / (1440 - width) * 100}% ${top / (960 - height) * 100}%`,
  };
+ const separateParts = art === -1 || art === 0 || art === 31;
  return <span className="mining-island-work" data-operating={operating} aria-hidden="true">
-  <span className="mining-island-part" data-motion={motion} style={{
+  {separateParts ? <IslandMechanism art={art} image={image}/> : <span className="mining-island-part" data-motion={motion} style={{
    left: `${left / 14.4}%`, top: `${top / 9.6}%`, width: `${width / 14.4}%`, height: `${height / 9.6}%`,
-  }}><span style={artwork}/></span>
-  {operating && material && <IslandMaterial material={material}/>}
+  }}><span style={artwork}/></span>}
+  {operating && material && art !== 31 && <IslandMaterial material={material}/>}
  </span>;
 }
 
