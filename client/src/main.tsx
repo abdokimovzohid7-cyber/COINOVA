@@ -384,7 +384,7 @@ const islandParts: Partial<Record<number, IslandPart>> = {
  [-1]: ["press", [120, 342, 79, 60], [151, 395, 236, 410, "gold", "press"]],
 };
 
-function IslandWork({ art, image }: { art: number; image: string }) {
+function IslandWork({ art, image, operating }: { art: number; image: string; operating: boolean }) {
  const part = islandParts[art];
  if (!part) return null;
  const [motion, [left, top, width, height], material] = part;
@@ -393,11 +393,11 @@ function IslandWork({ art, image }: { art: number; image: string }) {
   backgroundSize: `${144000 / width}% ${96000 / height}%`,
   backgroundPosition: `${left / (1440 - width) * 100}% ${top / (960 - height) * 100}%`,
  };
- return <span className="mining-island-work" aria-hidden="true">
+ return <span className="mining-island-work" data-operating={operating} aria-hidden="true">
   <span className="mining-island-part" data-motion={motion} style={{
    left: `${left / 14.4}%`, top: `${top / 9.6}%`, width: `${width / 14.4}%`, height: `${height / 9.6}%`,
   }}><span style={artwork}/></span>
-  {material && <IslandMaterial material={material}/>}
+  {operating && material && <IslandMaterial material={material}/>}
  </span>;
 }
 
@@ -697,7 +697,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
         const purchased = !item || owned.some(device => device.id === id);
         const operating = purchased && (!item ? active : item.kind === 'miner' ? !!data!.deviceMining?.[id] : anyMining);
         return <React.Fragment key={id}>
-         {operating && <IslandWork art={art} image={'/mining-island-' + name + '.webp'}/>}
+         {purchased && <IslandWork art={art} image={'/mining-island-' + name + '.webp'} operating={operating}/>}
          <button type="button" className="mining-island-hotspot"
          title={label} aria-label={purchased ? label : label + ' · ' + {uz:'Qulflangan',ru:'Заблокировано',en:'Locked'}[lang]} disabled={!purchased}
          aria-haspopup={purchased ? 'dialog' : undefined} style={{left:x+'%',top:y+'%',width:width+'%',height:height+'%'}}
