@@ -1621,6 +1621,7 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 }
 
 .mining-island-scroll {
+  overflow-y: hidden;
   background-color: #10091f;
   background-image:
     radial-gradient(circle at 18% 26%, #ad75ed70 1px, transparent 1.6px),
@@ -1664,6 +1665,7 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 }
 .mining-float-crop {
   position: relative;
+  overflow: hidden;
   width: min(100%, calc(var(--crop-ratio) * var(--crop-limit, 108px)));
   aspect-ratio: var(--crop-ratio);
   clip-path: polygon(12% 18%, 25% 4%, 74% 2%, 91% 17%, 97% 44%, 99% 70%, 89% 83%,
