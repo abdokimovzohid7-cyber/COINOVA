@@ -410,6 +410,107 @@ function IslandMaterial({ material }: { material: NonNullable<IslandPart[2]> }) 
  } as React.CSSProperties}><i/><i/><i/></span>;
 }
 
+const islandScenes = [
+ { name: 'quarry', spots: [
+  { art: -1, x: 11, y: 41, width: 20, height: 26 },
+  { art: 0, x: 30, y: 22, width: 12, height: 15 },
+  { art: 1, x: 43, y: 19, width: 10, height: 17 },
+  { art: 2, x: 56, y: 20, width: 15, height: 16 },
+  { art: 3, x: 72, y: 20, width: 11, height: 17 },
+  { art: 4, x: 88, y: 21, width: 17, height: 16 },
+  { art: 5, x: 30, y: 40, width: 13, height: 16 },
+  { art: 6, x: 44, y: 39, width: 13, height: 16 },
+  { art: 7, x: 58, y: 40, width: 12, height: 16 },
+  { art: 8, x: 72, y: 40, width: 13, height: 16 },
+  { art: 9, x: 89, y: 41, width: 16, height: 17 },
+  { art: 30, x: 24, y: 62, width: 15, height: 20 },
+  { art: 31, x: 40, y: 63, width: 15, height: 18 },
+  { art: 32, x: 55, y: 63, width: 15, height: 18 },
+  { art: 33, x: 72, y: 63, width: 15, height: 18 },
+  { art: 34, x: 88, y: 62, width: 15, height: 20 },
+ ] },
+ { name: 'energy', spots: [
+  { art: 10, x: 18, y: 19, width: 15, height: 17 },
+  { art: 11, x: 34, y: 18, width: 15, height: 17 },
+  { art: 12, x: 50, y: 19, width: 15, height: 17 },
+  { art: 13, x: 67, y: 19, width: 15, height: 17 },
+  { art: 14, x: 84, y: 19, width: 15, height: 17 },
+  { art: 15, x: 16, y: 39, width: 15, height: 17 },
+  { art: 16, x: 33, y: 38, width: 15, height: 17 },
+  { art: 17, x: 49, y: 39, width: 15, height: 17 },
+  { art: 18, x: 65, y: 39, width: 15, height: 17 },
+  { art: 19, x: 85, y: 39, width: 15, height: 17 },
+  { art: 35, x: 14, y: 62, width: 15, height: 17 },
+  { art: 36, x: 32, y: 61, width: 15, height: 17 },
+  { art: 37, x: 50, y: 62, width: 15, height: 17 },
+  { art: 38, x: 68, y: 61, width: 15, height: 17 },
+  { art: 39, x: 87, y: 61, width: 15, height: 17 },
+ ] },
+ { name: 'storage', spots: [
+  { art: 20, x: 19, y: 22, width: 15, height: 17 },
+  { art: 21, x: 36, y: 23, width: 15, height: 17 },
+  { art: 22, x: 51, y: 22, width: 15, height: 17 },
+  { art: 23, x: 67, y: 20, width: 15, height: 17 },
+  { art: 24, x: 83, y: 22, width: 15, height: 17 },
+  { art: 25, x: 14, y: 41, width: 15, height: 17 },
+  { art: 26, x: 33, y: 41, width: 15, height: 17 },
+  { art: 27, x: 50, y: 42, width: 15, height: 17 },
+  { art: 28, x: 66, y: 41, width: 15, height: 17 },
+  { art: 29, x: 85, y: 41, width: 15, height: 17 },
+  { art: 40, x: 12, y: 62, width: 15, height: 17 },
+  { art: 41, x: 32, y: 63, width: 15, height: 17 },
+  { art: 42, x: 50, y: 63, width: 15, height: 17 },
+  { art: 43, x: 70, y: 63, width: 15, height: 17 },
+  { art: 44, x: 88, y: 62, width: 15, height: 17 },
+ ] },
+];
+type MiningSpot = { id: string; label: string; purchased: boolean; operating: boolean };
+
+function MiningIsland({ lang, getSpot, onSelect }: {
+ lang: Lang;
+ getSpot?: (art: number) => MiningSpot | undefined;
+ onSelect?: (id: string) => void;
+}) {
+ const [motion, setMotion] = useState(() => !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+ const copy = {
+  uz: { title: 'Mining oroli', swipe: 'Orolni chapga yoki o‘ngga suring', motion: 'Animatsiya', locked: 'Qulflangan' },
+  ru: { title: 'Остров добычи', swipe: 'Листайте остров влево или вправо', motion: 'Анимация', locked: 'Заблокировано' },
+  en: { title: 'Mining island', swipe: 'Swipe left or right to explore', motion: 'Animation', locked: 'Locked' },
+ }[lang];
+ return <section className="mining-island" data-motion-enabled={motion}>
+  <div className="mining-island-heading">
+   <h2>{copy.title}</h2>
+   <button className="secondary-btn mining-motion-toggle" type="button" aria-pressed={motion} onClick={()=>setMotion(value=>!value)}>
+    {motion ? <CircleStop size={15} aria-hidden="true"/> : <Play size={15} aria-hidden="true"/>}{copy.motion}
+   </button>
+  </div>
+  <p className="muted sm">{copy.swipe}</p>
+  <div className="mining-island-scroll" tabIndex={0} aria-label={copy.title}>
+   <div className="mining-island-scenes">
+    {islandScenes.map(({name, spots}, index) => {
+     const image = '/mining-island-' + name + '.webp';
+     return <div className="mining-island-scene" key={name}>
+      <img src={image} alt="" width={1440} height={960} draggable={false} loading={index===0 ? 'eager' : 'lazy'} decoding="async"/>
+      <div className="mining-island-stars" aria-hidden="true"><i/><i/><i/><i/><i/></div>
+      {spots.map(({art,x,y,width,height}) => {
+       const spot = getSpot?.(art);
+       return <React.Fragment key={art}>
+        {motion && (!getSpot || spot?.purchased) && <IslandWork art={art} image={image} operating={spot?.operating ?? true}/>}
+        {spot && <button className="mining-island-hotspot" type="button" title={spot.label}
+         aria-label={spot.purchased ? spot.label : spot.label + ' · ' + copy.locked}
+         disabled={!spot.purchased} aria-haspopup={spot.purchased ? 'dialog' : undefined}
+         style={{left:x+'%',top:y+'%',width:width+'%',height:height+'%'}} onClick={()=>onSelect?.(spot.id)}>
+         {!spot.purchased && <span className="mining-island-lock" aria-hidden="true"><Lock size={15}/></span>}
+        </button>}
+       </React.Fragment>;
+      })}
+     </div>;
+    })}
+   </div>
+  </div>
+ </section>;
+}
+
 function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(localStorage.getItem('coinova-lang')||'')?localStorage.getItem('coinova-lang') as Lang:'uz'));const t=(key:TranslationKey)=>dictionary[lang][key];const [page,setPage]=useState<Page>('home');const[loading,setLoading]=useState(true);const[data,setData]=useState<State|null>(null);const[busy,setBusy]=useState('');const[error,setError]=useState('');const[notifs,setNotifs]=useState(false);const[languageOpen,setLanguageOpen]=useState(false);const[copied,setCopied]=useState(false);const[now,setNow]=useState(Date.now());
  const [openedChannels,setOpenedChannels]=useState<Record<string,boolean>>({});
  const [channelResults,setChannelResults]=useState<Record<string,{error?:string;fc?:number}>>({});
@@ -569,61 +670,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   </section>;
  }
  function HomePage(){const adventure={uz:'Kosmos seni kutmoqda.',ru:'Космос ждёт тебя.',en:'The cosmos awaits you.'};const salutation={uz:'Salom',ru:'Привет',en:'Hello'};const nickname = data!.user.username?.trim() || data!.user.first_name;return <HomeMotion><h1 className="cosmic-banner"><img src="/coinova-banner.webp" width={2048} height={682} alt="COINOVA · PLAY • EARN • GROW" lang="en" fetchPriority="high"/><span className="banner-wordmark-motion" aria-hidden="true"/><span className="banner-slogan-motion" aria-hidden="true"><span/><span/><span/></span></h1><section className="hero"><div className="stars"/><div className="hero-content"><span className="hero-badge"><Zap size={14}/> {lang==='uz'?'SENING KOSMIK SARGUZASHTING SHU YERDAN BOSHLANADI':lang==='ru'?'ТВОЁ КОСМИЧЕСКОЕ ПРИКЛЮЧЕНИЕ НАЧИНАЕТСЯ ЗДЕСЬ':'YOUR COSMIC ADVENTURE STARTS HERE'}</span><h2><span className="hero-greeting">{salutation[lang]}, <span className="gradient-text">{nickname}!</span></span><span className="hero-adventure">{adventure[lang]}</span></h2><HeroTypewriter key={lang} text={heroQuestion[lang]}/><button className="primary-btn" onClick={()=>changePage('mining')}><Rocket className="hero-launch-icon" size={19} aria-hidden="true"/>{t('startAdventure')}</button><div className="hero-metrics"><span><small>{lang==='uz'?'JAMI TAJRIBA':lang==='ru'?'ВСЕГО ОПЫТА':'TOTAL EXPERIENCE'}</small><strong><span className="hero-stat-number">{number(data!.user.xp)}</span> XP</strong></span><span><small>{lang==='uz'?'HOZIRGI DARAJA':lang==='ru'?'ТЕКУЩИЙ УРОВЕНЬ':'CURRENT LEVEL'}</small><strong><span className="hero-stat-number">{data!.user.level}</span> {t('level')}</strong></span></div></div><Astronaut/><FloatingCoins/><div className="astronaut-label"><Sparkles size={13}/>{lang==='uz'?'Kichik kosmonavt':lang==='ru'?'Маленький космонавт':'Little astronaut'}</div></section><div className="balance-grid">{renderBalance('fc')}{renderBalance('rc')}</div>{renderXP()}<div className="quick-section glass"><div className="quick-top"><div><span className="xp-eyebrow">{lang==='uz'?'TEZKOR KIRISH':lang==='ru'?'БЫСТРЫЙ ДОСТУП':'QUICK ACCESS'}</span><h2>{t('quick')}</h2></div><span className="quick-flare"><Sparkles size={24}/></span></div><div className="quick-grid">{[...extras,['mining',Pickaxe] as const,['bonus',Gift] as const].map(([key,Icon])=><button className="quick glass" key={key} onClick={()=>changePage(key as Page)}><span className="quick-icon"><Icon size={21}/></span><strong>{t(key as TranslationKey)}</strong><ChevronRight size={15} className="muted"/></button>)}</div></div><SectionHeader title={t('achievements')} to="leaderboard"/><Card className="achievement"><span className="trophy-bubble"><Trophy size={25}/></span><div><strong>{t('level')} {data!.user.level}</strong><p className="muted sm">{number(data!.user.xp)} XP · {t('totalReferrals')}: {data!.user.referral_count}</p></div><button className="icon-link" aria-label={t('leaderboard')} onClick={()=>changePage('leaderboard')}><ArrowRight/></button></Card></HomeMotion>}
- const islandScenes = [
- { name: 'quarry', spots: [
-  { art: -1, x: 11, y: 41, width: 20, height: 26 },
-  { art: 0, x: 30, y: 22, width: 12, height: 15 },
-  { art: 1, x: 43, y: 19, width: 10, height: 17 },
-  { art: 2, x: 56, y: 20, width: 15, height: 16 },
-  { art: 3, x: 72, y: 20, width: 11, height: 17 },
-  { art: 4, x: 88, y: 21, width: 17, height: 16 },
-  { art: 5, x: 30, y: 40, width: 13, height: 16 },
-  { art: 6, x: 44, y: 39, width: 13, height: 16 },
-  { art: 7, x: 58, y: 40, width: 12, height: 16 },
-  { art: 8, x: 72, y: 40, width: 13, height: 16 },
-  { art: 9, x: 89, y: 41, width: 16, height: 17 },
-  { art: 30, x: 24, y: 62, width: 15, height: 20 },
-  { art: 31, x: 40, y: 63, width: 15, height: 18 },
-  { art: 32, x: 55, y: 63, width: 15, height: 18 },
-  { art: 33, x: 72, y: 63, width: 15, height: 18 },
-  { art: 34, x: 88, y: 62, width: 15, height: 20 },
- ] },
- { name: 'energy', spots: [
-  { art: 10, x: 18, y: 19, width: 15, height: 17 },
-  { art: 11, x: 34, y: 18, width: 15, height: 17 },
-  { art: 12, x: 50, y: 19, width: 15, height: 17 },
-  { art: 13, x: 67, y: 19, width: 15, height: 17 },
-  { art: 14, x: 84, y: 19, width: 15, height: 17 },
-  { art: 15, x: 16, y: 39, width: 15, height: 17 },
-  { art: 16, x: 33, y: 38, width: 15, height: 17 },
-  { art: 17, x: 49, y: 39, width: 15, height: 17 },
-  { art: 18, x: 65, y: 39, width: 15, height: 17 },
-  { art: 19, x: 85, y: 39, width: 15, height: 17 },
-  { art: 35, x: 14, y: 62, width: 15, height: 17 },
-  { art: 36, x: 32, y: 61, width: 15, height: 17 },
-  { art: 37, x: 50, y: 62, width: 15, height: 17 },
-  { art: 38, x: 68, y: 61, width: 15, height: 17 },
-  { art: 39, x: 87, y: 61, width: 15, height: 17 },
- ] },
- { name: 'storage', spots: [
-  { art: 20, x: 19, y: 22, width: 15, height: 17 },
-  { art: 21, x: 36, y: 23, width: 15, height: 17 },
-  { art: 22, x: 51, y: 22, width: 15, height: 17 },
-  { art: 23, x: 67, y: 20, width: 15, height: 17 },
-  { art: 24, x: 83, y: 22, width: 15, height: 17 },
-  { art: 25, x: 14, y: 41, width: 15, height: 17 },
-  { art: 26, x: 33, y: 41, width: 15, height: 17 },
-  { art: 27, x: 50, y: 42, width: 15, height: 17 },
-  { art: 28, x: 66, y: 41, width: 15, height: 17 },
-  { art: 29, x: 85, y: 41, width: 15, height: 17 },
-  { art: 40, x: 12, y: 62, width: 15, height: 17 },
-  { art: 41, x: 32, y: 63, width: 15, height: 17 },
-  { art: 42, x: 50, y: 63, width: 15, height: 17 },
-  { art: 43, x: 70, y: 63, width: 15, height: 17 },
-  { art: 44, x: 88, y: 62, width: 15, height: 17 },
- ] },
-];
- const [islandSelection, setIslandSelection] = useState('');
+  const [islandSelection, setIslandSelection] = useState('');
  function MiningPage(){
   const { mining, miningHistory, user, miningLevel = 1, miningLevels = [] } = data!;
   const active = !!mining;
@@ -640,7 +687,6 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
   const equipmentByArt = new Map((data!.equipment ?? []).map(item => [item.art, item]));
   const mainSelected = islandSelection === 'press';
   const pressName = {uz:'Asosiy press',ru:'Основной пресс',en:'Main press'}[lang];
-  const islandName = {uz:'Mining oroli',ru:'Остров добычи',en:'Mining island'}[lang];
   const storageLabel = lang === 'uz' ? 'Sig‘im' : lang === 'ru' ? 'Вместимость' : 'Capacity';
   const session = device ? data!.deviceMining?.[device.id] : mining;
   const config = device && data!.miningConfig?.[device.id];
@@ -680,36 +726,15 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
    : action('upgrade', '/mining/upgrade/' + (selectedLevel + 1));
   return <>
    <div className="page-heading"><span className="eyebrow"><Pickaxe size={15}/> {t('mining')}</span><h1>{t('mineTitle')}</h1><p>{t('mineDesc')}</p></div>
-   <section className="mining-island">
-    <h2>{islandName}</h2>
-    <p className="muted sm">{{uz:'Orolni chapga yoki o‘ngga suring',ru:'Листайте остров влево или вправо',en:'Swipe left or right to explore'}[lang]}</p>
-    <div className="mining-island-scroll" tabIndex={0} aria-label={islandName}>
-     <div className="mining-island-scenes">
-      {islandScenes.map(({name, spots}, index) => <div className="mining-island-scene" key={name}>
-       <img src={'/mining-island-' + name + '.webp'} alt="" width={1440} height={960}
-        draggable={false} loading={index===0 ? 'eager' : 'lazy'} decoding="async"/>
-       <div className="mining-island-stars" aria-hidden="true"><i/><i/><i/><i/><i/></div>
-       {spots.map(({art,x,y,width,height}) => {
-        const item = equipmentByArt.get(art);
-        if (art !== -1 && !item) return null;
-        const id = item?.id ?? 'press';
-        const label = item?.name ?? pressName;
-        const purchased = !item || owned.some(device => device.id === id);
-        const operating = purchased && (!item ? active : item.kind === 'miner' ? !!data!.deviceMining?.[id] : anyMining);
-        return <React.Fragment key={id}>
-         {purchased && <IslandWork art={art} image={'/mining-island-' + name + '.webp'} operating={operating}/>}
-         <button type="button" className="mining-island-hotspot"
-         title={label} aria-label={purchased ? label : label + ' · ' + {uz:'Qulflangan',ru:'Заблокировано',en:'Locked'}[lang]} disabled={!purchased}
-         aria-haspopup={purchased ? 'dialog' : undefined} style={{left:x+'%',top:y+'%',width:width+'%',height:height+'%'}}
-         onClick={()=>setIslandSelection(id)}>
-         {!purchased && <span className="mining-island-lock" aria-hidden="true"><Lock size={15}/></span>}
-         </button>
-        </React.Fragment>;
-       })}
-      </div>)}
-     </div>
-    </div>
-   </section>
+   <MiningIsland lang={lang} getSpot={art => {
+    if (art === -1) return { id: 'press', label: pressName, purchased: true, operating: active };
+    const item = equipmentByArt.get(art);
+    if (!item) return;
+    return {
+     id: item.id, label: item.name, purchased: owned.some(device => device.id === item.id),
+     operating: item.kind === 'miner' ? !!data!.deviceMining?.[item.id] : anyMining,
+    };
+   }} onSelect={setIslandSelection}/>
    {islandSelection && selectedName && <dialog className="mining-island-dialog press-compact-dialog" aria-label={selectedName}
     ref={element=>{if(element && !element.open) element.showModal()}}
     onClose={()=>setIslandSelection('')} onClick={event=>{if(event.target===event.currentTarget) event.currentTarget.close()}}>
@@ -1070,4 +1095,7 @@ function App(){const [lang,setLang]=useState<Lang>((['uz','ru','en'].includes(lo
  </main>;
  return <div className="app-shell">{header}{!data?<main className="login-screen"><div className="login-art"><PlanetLogo size={100}/></div><h1>COINOVA</h1><p>{t('platformName')}</p><div className="glass login-card"><h2>{t('signIn')}</h2>{loading?<p>{t('loading')}</p>:<><p className="muted">{errorMessage}</p>{error==='sign_in_required'?<a href={authPath('signin')} target="_top" className="primary-btn">{t('chatgptSignIn')}</a>:<button className="primary-btn" onClick={()=>location.reload()}>{t('retry')}</button>}</>}</div></main>:<div className="layout"><aside className="sidebar"><nav>{nav.concat(extras).map(([name,Icon])=><button key={name} className={activePage===name?'selected':''} onClick={()=>changePage(name)}><Icon size={20}/><span>{t(name)}</span></button>)}</nav></aside><main className="content"><div className="content-inner" key={page}>{error&&<div className="error-banner"><span role="alert">{errorMessage}</span><button onClick={()=>setError('')}>×</button></div>}{pages[page]()}<footer className="footer"><PlanetLogo size={21}/> COINOVA © 2026 · {t('limit')}</footer></div></main></div>}{data&&<nav className="bottom-nav" aria-label={t('navigation')}>{nav.map(([name,Icon])=><button key={name} aria-current={activePage===name?'page':undefined} className={activePage===name?'active':''} onClick={()=>changePage(name)}><Icon size={20} strokeWidth={activePage===name?2.6:1.8}/><span>{t(name)}</span></button>)}</nav>}</div>;
 }
-createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);
+const miningPreview = new URLSearchParams(window.location.search).get('preview') === 'mining-motion';
+createRoot(document.getElementById('root')!).render(<React.StrictMode>{miningPreview
+ ? <main className="mining-motion-preview"><div className="content-inner"><MiningIsland lang="uz"/></div></main>
+ : <App/>}</React.StrictMode>);
