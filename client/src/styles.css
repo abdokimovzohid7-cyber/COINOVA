@@ -1613,6 +1613,14 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
     animation: island-power-travel 1.65s linear infinite;
   }
   .mining-island-part[data-motion="plasma"] > span { animation: island-plasma-cycle 1.4s ease-in-out infinite; }
+  .mining-island-work[data-operating="false"] .mining-island-part > span {
+    animation-delay: -.85s;
+  }
+  .mining-island-work[data-operating="false"] .mining-island-part:is(
+    [data-motion="beam"], [data-motion="chip"], [data-motion="coil"], [data-motion="plasma"], [data-motion="belt"]
+  ) > span {
+    opacity: .42;
+  }
   .mining-island-material > i { animation: island-material-transfer 2.4s linear infinite; }
   .mining-island-material > i:nth-child(2) { animation-delay: -.8s; }
   .mining-island-material > i:nth-child(3) { animation-delay: -1.6s; }
@@ -1622,8 +1630,8 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
   .mining-island-material[data-path="cargo"] > i:nth-child(n+2) { display: none; }
 }
 @keyframes island-press-stroke {
-  0%, 18%, 100% { transform: scaleY(1); }
-  47%, 59% { transform: scaleY(1.42); }
+  0%, 8%, 100% { transform: scaleY(1); }
+  37%, 56% { transform: scaleY(1.5); }
   72% { transform: scaleY(.98); }
 }
 @keyframes island-drill-feed {
