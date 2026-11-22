@@ -475,9 +475,9 @@ function MiningIsland({ lang, getSpot, onSelect }: {
 }) {
  const [motion, setMotion] = useState(() => !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
  const copy = {
-  uz: { title: 'Mining oroli', press: 'Asosiy press', swipe: 'Orolni chapga yoki o‘ngga suring', motion: 'Animatsiya', locked: 'Qulflangan' },
-  ru: { title: 'Остров добычи', press: 'Основной пресс', swipe: 'Листайте остров влево или вправо', motion: 'Анимация', locked: 'Заблокировано' },
-  en: { title: 'Mining island', press: 'Main press', swipe: 'Swipe left or right to explore', motion: 'Animation', locked: 'Locked' },
+  uz: { title: 'Mining oroli', press: 'Asosiy press', moonDrill: 'Oy burg‘usi', swipe: 'Orolni chapga yoki o‘ngga suring', motion: 'Animatsiya', locked: 'Qulflangan' },
+  ru: { title: 'Остров добычи', press: 'Основной пресс', moonDrill: 'Лунный бур', swipe: 'Листайте остров влево или вправо', motion: 'Анимация', locked: 'Заблокировано' },
+  en: { title: 'Mining island', press: 'Main press', moonDrill: 'Moon drill', swipe: 'Swipe left or right to explore', motion: 'Animation', locked: 'Locked' },
  }[lang];
  return <section className="mining-island" data-motion-enabled={motion}>
   <div className="mining-island-heading">
@@ -496,7 +496,7 @@ function MiningIsland({ lang, getSpot, onSelect }: {
        const spot = getSpot?.(art);
        const unlocked = !getSpot || !!spot?.purchased;
        const running = motion && unlocked && (spot?.operating ?? true);
-       const label = spot?.label ?? (art === -1 ? copy.press : '');
+       const label = spot?.label ?? (art === -1 ? copy.press : art === 0 ? copy.moonDrill : '');
        const crop = {
         left: Math.max(0, x - width / 2),
         top: Math.max(0, y - height / 2 - 2),
@@ -507,6 +507,8 @@ function MiningIsland({ lang, getSpot, onSelect }: {
         <div className="mining-float-visual" aria-hidden="true">
          {art === -1 ? <img className="mining-float-press" width={289} height={241} draggable={false}
           src={running ? '/mining-press-work.webp' : '/mining-press-idle.webp'} alt=""/>
+          : art === 0 ? <img className="mining-float-moon-drill" draggable={false}
+           src={running ? '/mining-moon-drill-work.webp' : '/mining-moon-drill-idle.webp'} alt=""/>
           : <>
            <span className="mining-float-rock"/>
            <div className="mining-float-crop" style={{'--crop-ratio': crop.width * 1.5 / crop.height} as React.CSSProperties}>
