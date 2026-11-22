@@ -508,7 +508,7 @@ function MiningIsland({ lang, getSpot, onSelect }: {
          {art === -1 ? <img className="mining-float-press" width={289} height={241} draggable={false}
           src={running ? '/mining-press-work.webp' : '/mining-press-idle.webp'} alt=""/>
           : art === 0 ? <img className="mining-float-moon-drill" draggable={false}
-           src={running ? '/mining-moon-drill-work.webp' : '/mining-moon-drill-idle.webp'} alt=""/>
+           src={running ? '/mining-moon-drill-horizontal-work.webp' : '/mining-moon-drill-horizontal-idle.webp'} alt=""/>
           : <>
            <span className="mining-float-rock"/>
            <div className="mining-float-crop" style={{'--crop-ratio': crop.width * 1.5 / crop.height} as React.CSSProperties}>
