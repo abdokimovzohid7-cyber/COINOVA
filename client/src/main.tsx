@@ -475,9 +475,9 @@ function MiningIsland({ lang, getSpot, onSelect }: {
 }) {
  const [motion, setMotion] = useState(() => !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
  const copy = {
-  uz: { title: 'Mining oroli', swipe: 'Orolni chapga yoki o‘ngga suring', motion: 'Animatsiya', locked: 'Qulflangan' },
-  ru: { title: 'Остров добычи', swipe: 'Листайте остров влево или вправо', motion: 'Анимация', locked: 'Заблокировано' },
-  en: { title: 'Mining island', swipe: 'Swipe left or right to explore', motion: 'Animation', locked: 'Locked' },
+  uz: { title: 'Mining oroli', press: 'Asosiy press', swipe: 'Orolni chapga yoki o‘ngga suring', motion: 'Animatsiya', locked: 'Qulflangan' },
+  ru: { title: 'Остров добычи', press: 'Основной пресс', swipe: 'Листайте остров влево или вправо', motion: 'Анимация', locked: 'Заблокировано' },
+  en: { title: 'Mining island', press: 'Main press', swipe: 'Swipe left or right to explore', motion: 'Animation', locked: 'Locked' },
  }[lang];
  return <section className="mining-island" data-motion-enabled={motion}>
   <div className="mining-island-heading">
@@ -488,23 +488,43 @@ function MiningIsland({ lang, getSpot, onSelect }: {
   </div>
   <p className="muted sm">{copy.swipe}</p>
   <div className="mining-island-scroll" tabIndex={0} aria-label={copy.title}>
-   <div className="mining-island-scenes">
-    {islandScenes.map(({name, spots}, index) => {
+   <div className="mining-float-map">
+    {islandScenes.map(({name, spots}) => {
      const image = '/mining-island-' + name + '.webp';
-     return <div className="mining-island-scene" key={name}>
-      <img src={image} alt="" width={1440} height={960} draggable={false} loading={index===0 ? 'eager' : 'lazy'} decoding="async"/>
-      <div className="mining-island-stars" aria-hidden="true"><i/><i/><i/><i/><i/></div>
+     return <div className="mining-float-district" key={name} data-district={name}>
       {spots.map(({art,x,y,width,height}) => {
        const spot = getSpot?.(art);
-       return <React.Fragment key={art}>
-        {motion && (!getSpot || spot?.purchased) && <IslandWork art={art} image={image} operating={spot?.operating ?? true}/>}
-        {spot && <button className="mining-island-hotspot" type="button" title={spot.label}
-         aria-label={spot.purchased ? spot.label : spot.label + ' · ' + copy.locked}
-         disabled={!spot.purchased} aria-haspopup={spot.purchased ? 'dialog' : undefined}
-         style={{left:x+'%',top:y+'%',width:width+'%',height:height+'%'}} onClick={()=>onSelect?.(spot.id)}>
-         {!spot.purchased && <span className="mining-island-lock" aria-hidden="true"><Lock size={15}/></span>}
-        </button>}
-       </React.Fragment>;
+       const unlocked = !getSpot || !!spot?.purchased;
+       const running = motion && unlocked && (spot?.operating ?? true);
+       const label = spot?.label ?? (art === -1 ? copy.press : '');
+       const crop = {
+        left: Math.max(0, x - width / 2),
+        top: Math.max(0, y - height / 2 - 2),
+        width: Math.min(width, 100 - (x - width / 2)),
+        height: height + 2,
+       };
+       return <div key={art} className="mining-float-slot" data-press={art === -1} data-locked={!unlocked}>
+        <div className="mining-float-visual" aria-hidden="true">
+         {art === -1 ? <img className="mining-float-press" width={289} height={241} draggable={false}
+          src={running ? '/mining-press-work.webp' : '/mining-press-idle.webp'} alt=""/>
+          : <>
+           <span className="mining-float-rock"/>
+           <div className="mining-float-crop" style={{'--crop-ratio': crop.width * 1.5 / crop.height} as React.CSSProperties}>
+            <div className="mining-float-plane" style={{
+             left: `${-100 * crop.left / crop.width}%`, top: `${-100 * crop.top / crop.height}%`,
+             width: `${10000 / crop.width}%`, height: `${10000 / crop.height}%`, backgroundImage: `url(${image})`,
+            }}>
+             {motion && unlocked && <IslandWork art={art} image={image} operating={running}/>}
+            </div>
+           </div>
+          </>}
+        </div>
+        {label && <span className="mining-float-label">{label}</span>}
+        {!unlocked && <span className="mining-float-lock" aria-hidden="true"><Lock size={14}/></span>}
+        {spot && <button className="mining-float-hit" type="button" title={spot.label}
+         aria-label={unlocked ? spot.label : spot.label + ' · ' + copy.locked}
+         disabled={!unlocked} aria-haspopup={unlocked ? 'dialog' : undefined} onClick={()=>onSelect?.(spot.id)}/>}
+       </div>;
       })}
      </div>;
     })}

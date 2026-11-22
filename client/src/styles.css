@@ -1425,35 +1425,6 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
   scrollbar-width: thin;
   scrollbar-color: #a664e8 transparent;
 }
-.mining-island-scenes { display: flex; }
-.mining-island-scene { position: relative; flex: 0 0 max(100%, 680px); aspect-ratio: 3 / 2; }
-.mining-island-scene img { display: block; width: 100%; height: 100%; user-select: none; }
-.mining-island-hotspot {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  background: transparent;
-  border: 0;
-  border-radius: 18px;
-  padding: 0;
-  cursor: pointer;
-}
-.mining-island-hotspot:disabled { cursor: default; opacity: 1; pointer-events: none; }
-.mining-island-lock {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  display: grid;
-  place-items: center;
-  transform: translateX(-50%);
-  width: 29px;
-  height: 29px;
-  border-radius: 50%;
-  border: 1px solid #f1bd68;
-  background: #201233f5;
-  color: #ffdb96;
-  box-shadow: 0 2px 8px #090512b3;
-}
-.mining-island-hotspot:focus-visible { outline: 2px solid #ffda8a; outline-offset: -2px; }
 
 .mining-island-dialog { width: min(360px, calc(100vw - 32px)); max-height: 75dvh; padding: 0; border: 1px solid #77459d; border-radius: 19px; background: #1a1029; color: #fff1df; }
 .mining-island-dialog::backdrop { background: #08051283; }
@@ -1503,41 +1474,11 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 .press-compact-upgrade-row strong, .press-compact-upgrade-row small { display: block; font-size: .75rem; }
 .press-compact-upgrade-row small, .press-compact-upgrade .sm { color: #cbbbd9; font-size: .68rem; }
 
-.mining-island-scene { overflow: hidden; container-type: inline-size; }
-.mining-island-stars, .mining-island-work {
+.mining-island-work {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
-.mining-island-stars { display: none; }
-.mining-island-stars i {
-  position: absolute;
-  width: 4px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: #f7e4ff;
-  box-shadow: 0 0 7px 2px #ad62f9;
-  opacity: 0;
-}
-.mining-island-stars i:nth-child(1) { left: 13%; top: 6%; }
-.mining-island-stars i:nth-child(2) { left: 27%; top: 11%; }
-.mining-island-stars i:nth-child(3) { left: 56%; top: 5%; }
-.mining-island-stars i:nth-child(4) { left: 79%; top: 7%; }
-.mining-island-stars i:nth-child(5) { left: 95%; top: 12%; }
-@media (prefers-reduced-motion: no-preference) {
-  .mining-island-stars { display: block; }
-  .mining-island-stars i { animation: island-star-twinkle 5s ease-in-out infinite; }
-  .mining-island-stars i:nth-child(2n) { animation-delay: -2.8s; }
-  .mining-island-stars i:nth-child(3n) { animation-delay: -1.2s; }
-}
-
-@keyframes island-star-twinkle {
-  0%, 12%, 100% { opacity: 0; transform: scale(.45); }
-  44% { opacity: .88; transform: scale(1); }
-  78% { opacity: .16; transform: scale(.65); }
-}
-
-.mining-island-hotspot { z-index: 1; }
 .mining-island-work { display: none; }
 .mining-island-part {
   position: absolute;
@@ -1677,4 +1618,123 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
     transform: translate(calc(var(--material-x) * .7), calc(var(--material-y) - 1.8cqw)) rotate(25deg);
   }
   87%, 100% { opacity: 0; transform: translate(var(--material-x), var(--material-y)) rotate(58deg) scale(.65); }
+}
+
+.mining-island-scroll {
+  background-color: #10091f;
+  background-image:
+    radial-gradient(circle at 18% 26%, #ad75ed70 1px, transparent 1.6px),
+    radial-gradient(circle at 75% 69%, #ac80e270 1px, transparent 1.6px),
+    radial-gradient(ellipse at 40% 54%, #40206b80, transparent 65%);
+  background-size: 97px 93px, 143px 151px, 660px 100%;
+  border-radius: 20px;
+}
+.mining-float-map {
+  display: flex;
+  align-items: stretch;
+  width: max-content;
+  gap: 26px;
+  padding: 20px 22px 18px;
+}
+.mining-float-district {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(3, 128px);
+  grid-auto-columns: 155px;
+  align-items: center;
+  gap: 8px 17px;
+}
+.mining-float-slot {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  height: 128px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: end;
+  isolation: isolate;
+}
+.mining-float-visual {
+  position: relative;
+  height: 108px;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+}
+.mining-float-crop {
+  position: relative;
+  width: min(100%, calc(var(--crop-ratio) * var(--crop-limit, 108px)));
+  aspect-ratio: var(--crop-ratio);
+  clip-path: polygon(12% 18%, 25% 4%, 74% 2%, 91% 17%, 97% 44%, 99% 70%, 89% 83%,
+    73% 91%, 64% 94%, 46% 94%, 28% 89%, 12% 83%, 2% 71%, 3% 44%);
+}
+.mining-float-plane {
+  position: absolute;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  container-type: inline-size;
+}
+.mining-float-rock {
+  position: absolute;
+  inset: 57% 4% 0;
+  background:
+    linear-gradient(146deg, transparent 48%, #b950ed4f 53%, transparent 59%) 10% 100% / 43% 61% no-repeat,
+    linear-gradient(54deg, #482071 12%, #251039 29%, #441f63 43%, #1e122c 62%, #41204f 78%, #170d29);
+  clip-path: polygon(0 25%, 10% 8%, 35% 0, 75% 1%, 93% 11%, 100% 25%, 95% 62%, 83% 70%, 67% 98%, 57% 92%, 43% 100%, 28% 83%, 16% 90%, 8% 72%);
+}
+.mining-float-label {
+  display: block;
+  min-height: 19px;
+  padding-inline: 3px;
+  color: #eadefb;
+  font-size: .71rem;
+  font-weight: 650;
+  text-align: center;
+  line-height: 1.23;
+}
+.mining-float-lock {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #1a0d2be8;
+  border: 1px solid #ae7dda;
+  color: #ebc9ff;
+}
+.mining-float-slot[data-locked="true"] .mining-float-visual { opacity: .62; }
+.mining-float-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.mining-float-hit:disabled { cursor: default; }
+.mining-float-hit:focus-visible { outline: 2px solid #e6b8fd; }
+.mining-float-district[data-district="quarry"] { grid-template-columns: 250px; }
+.mining-float-slot[data-press="true"] {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  height: auto;
+  align-self: center;
+  padding-block: 12px;
+}
+.mining-float-slot[data-press="true"] .mining-float-visual { height: auto; }
+.mining-float-slot[data-press="true"] .mining-float-label { font-size: .92rem; }
+.mining-float-press { display: block; width: 100%; height: auto; }
+@media (max-width: 700px) {
+  .mining-float-map { gap: 20px; padding: 14px 13px; }
+  .mining-float-district { grid-template-rows: repeat(3, 111px); grid-auto-columns: 132px; gap: 7px 12px; }
+  .mining-float-district[data-district="quarry"] { grid-template-columns: 210px; }
+  .mining-float-slot { height: 111px; }
+  .mining-float-visual { max-height: 92px; }
+  .mining-float-crop { --crop-limit: 92px; }
+  .mining-float-slot[data-press="true"] .mining-float-visual { max-height: none; }
 }
